@@ -162,7 +162,7 @@
     justify-content: space-between;
     gap: 12px;
     padding: 16px 4px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: none;
     background: none;
     border-left: none;
     border-right: none;
@@ -173,6 +173,61 @@
     color: var(--text);
   }
   .ex-row:active { background: var(--surface-2); }
+  .ex-row-wrap { display: flex; align-items: stretch; border-bottom: 1px solid var(--border); }
+  .ex-row-wrap .ex-row { flex: 1; min-width: 0; }
+  .ex-del-btn {
+    background: none;
+    border: none;
+    color: var(--danger);
+    font-size: 15px;
+    padding: 0 12px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .custom-tag {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+  .add-exercise-row { margin-top: 14px; }
+  .add-exercise-row input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 15px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .add-exercise-row .row-btns { display: flex; gap: 8px; }
+  .add-exercise-row .row-btns button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+  .add-exercise-row .row-btns button.secondary {
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .ghost-btn {
+    background: none !important;
+    border: 1px dashed var(--border) !important;
+    color: var(--text-dim) !important;
+  }
   .ex-main { min-width: 0; }
   .ex-name {
     font-size: 17px;
@@ -701,6 +756,7 @@
       <div class="header-icons">
         <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">&#9789;</button>
         <button class="icon-btn" id="weightBtn" aria-label="Body weight log">&#9878;</button>
+        <button class="icon-btn" id="progressBtn" aria-label="Progress charts">&#128200;</button>
         <button class="icon-btn" id="settingsBtn" aria-label="Settings">&#9881;</button>
         <button class="icon-btn" id="historyBtn" aria-label="View history">&#128337;</button>
       </div>
@@ -778,6 +834,21 @@
   <div class="sheet-body" id="historyBody"></div>
 </div>
 
+<!-- Progress Sheet -->
+<div class="sheet-overlay" id="progressSheet" aria-hidden="true">
+  <div class="sheet-header">
+    <button class="back-btn" id="progressBack" aria-label="Back">&#8592;</button>
+    <div class="sheet-title">Progress</div>
+  </div>
+  <div class="sheet-body">
+    <div class="field">
+      <label for="progressExerciseSelect">Exercise</label>
+      <select id="progressExerciseSelect"></select>
+    </div>
+    <div id="progressViewHolder"></div>
+  </div>
+</div>
+
 <!-- Settings Sheet -->
 <div class="sheet-overlay" id="settingsSheet" aria-hidden="true">
   <div class="sheet-header">
@@ -796,6 +867,13 @@
     <div class="field">
       <label for="restDurationInput">Default rest timer (seconds)</label>
       <input type="number" id="restDurationInput" inputmode="numeric">
+    </div>
+    <div class="field">
+      <label>Rest timer alert</label>
+      <div class="segmented" id="soundSegmented">
+        <button class="seg-btn" data-sound-choice="on">Sound &amp; vibration</button>
+        <button class="seg-btn" data-sound-choice="off">Silent</button>
+      </div>
     </div>
     <div class="field">
       <label>Weekly split</label>
@@ -853,6 +931,7 @@
   var SETTINGS_KEY = "ironlog_settings_v1";
   var WEIGHT_KEY = "ironlog_bodyweight_v1";
   var NOTES_KEY = "ironlog_notes_v1";
+  var CUSTOM_EX_KEY = "ironlog_custom_exercises_v1";
 
   var EXERCISES = {
     "Back": ["Weighted Pull Ups", "Close Lat Pull Downs", "Single Arm Seated Rows", "Lat Push Downs", "Face Pulls", "Lower Back Extensions"],
@@ -878,8 +957,48 @@
     settings: null,
     weightLog: [],
     notes: {},
+    customExercises: {},
     rest: { remaining: 0, total: 0, intervalId: null }
   };
+
+  function exercisesForGroup(group) {
+    var base = EXERCISES[group] || [];
+    var custom = state.customExercises[group] || [];
+    return base.concat(custom);
+  }
+
+  function loadCustomExercises() {
+    try {
+      var raw = window.localStorage.getItem(CUSTOM_EX_KEY);
+      var p = raw ? JSON.parse(raw) : {};
+      return (p && typeof p === "object") ? p : {};
+    } catch (e) { return {}; }
+  }
+
+  function saveCustomExercises() {
+    try { window.localStorage.setItem(CUSTOM_EX_KEY, JSON.stringify(state.customExercises)); } catch (e) {}
+  }
+
+  function addCustomExercise(group, name) {
+    name = (name || "").trim();
+    if (!name) return false;
+    var all = exercisesForGroup(group).map(function(n) { return n.toLowerCase(); });
+    if (all.indexOf(name.toLowerCase()) !== -1) {
+      showToast("That exercise is already in " + group);
+      return false;
+    }
+    if (!state.customExercises[group]) state.customExercises[group] = [];
+    state.customExercises[group].push(name);
+    saveCustomExercises();
+    return true;
+  }
+
+  function removeCustomExercise(group, name) {
+    if (!state.customExercises[group]) return;
+    state.customExercises[group] = state.customExercises[group].filter(function(n) { return n !== name; });
+    saveCustomExercises();
+    renderExerciseList();
+  }
 
   function loadSettings() {
     var s = {};
@@ -890,6 +1009,7 @@
     return {
       theme: s.theme || "system",
       restSeconds: s.restSeconds || 90,
+      soundEnabled: s.soundEnabled !== false,
       dayAssignments: s.dayAssignments || {0: null, 1: null, 2: null, 3: null, 4: null, 5: null, 6: null},
       lastBackupAt: s.lastBackupAt || null,
       backupSnoozeUntil: s.backupSnoozeUntil || null
@@ -1049,10 +1169,14 @@
   function renderExerciseList() {
     var listEl = document.getElementById("exerciseList");
     listEl.innerHTML = "";
-    var exercises = EXERCISES[state.activeGroup];
+    var exercises = exercisesForGroup(state.activeGroup);
+    var customSet = {};
+    (state.customExercises[state.activeGroup] || []).forEach(function(n) { customSet[n] = true; });
     var prIndices = computePRIndices();
     exercises.forEach(function(exName) {
       var last = lastEntryFor(exName);
+      var wrap = document.createElement("div");
+      wrap.className = "ex-row-wrap";
       var row = document.createElement("button");
       row.className = "ex-row";
       var lastHtml;
@@ -1066,14 +1190,28 @@
       }
       row.innerHTML =
         '<div class="ex-main">' +
-          '<div class="ex-name">' + escapeHtml(exName) + '</div>' +
+          '<div class="ex-name">' + escapeHtml(exName) + (customSet[exName] ? ' <span class="custom-tag">Custom</span>' : '') + '</div>' +
           '<div class="ex-last">' + lastHtml + '</div>' +
         '</div>' +
         '<div class="chev">&#8250;</div>';
       row.addEventListener("click", function() {
         openLogSheet(state.activeGroup, exName);
       });
-      listEl.appendChild(row);
+      wrap.appendChild(row);
+      if (customSet[exName]) {
+        var delBtn = document.createElement("button");
+        delBtn.className = "ex-del-btn";
+        delBtn.setAttribute("aria-label", "Remove " + exName);
+        delBtn.innerHTML = "&#10005;";
+        delBtn.addEventListener("click", function(e) {
+          e.stopPropagation();
+          if (confirm('Remove "' + exName + '" from ' + state.activeGroup + '? Past logged sets stay in History.')) {
+            removeCustomExercise(state.activeGroup, exName);
+          }
+        });
+        wrap.appendChild(delBtn);
+      }
+      listEl.appendChild(wrap);
     });
 
     var today = todayISO();
@@ -1087,11 +1225,46 @@
       finishBtn.addEventListener("click", function() { openDaySummary(state.activeGroup); });
       listEl.appendChild(finishBtn);
     }
+
+    var addRow = document.createElement("div");
+    addRow.className = "add-exercise-row";
+    addRow.innerHTML = '<button class="util-btn ghost-btn" id="addExerciseBtn">+ Add exercise to ' + escapeHtml(state.activeGroup) + '</button>';
+    listEl.appendChild(addRow);
+    document.getElementById("addExerciseBtn").addEventListener("click", function() {
+      showAddExerciseField(state.activeGroup);
+    });
+  }
+
+  function showAddExerciseField(group) {
+    var addRow = document.querySelector(".add-exercise-row");
+    if (!addRow) return;
+    addRow.innerHTML =
+      '<input type="text" id="newExerciseInput" placeholder="Exercise name" autocomplete="off">' +
+      '<div class="row-btns">' +
+        '<button id="confirmAddExerciseBtn">Add</button>' +
+        '<button id="cancelAddExerciseBtn" class="secondary">Cancel</button>' +
+      '</div>';
+    var input = document.getElementById("newExerciseInput");
+    input.focus();
+    document.getElementById("confirmAddExerciseBtn").addEventListener("click", function() {
+      var name = input.value.trim();
+      if (!name) { showToast("Enter a name first"); return; }
+      if (addCustomExercise(group, name)) {
+        showToast('"' + name + '" added to ' + group);
+        renderExerciseList();
+      }
+    });
+    document.getElementById("cancelAddExerciseBtn").addEventListener("click", function() {
+      renderExerciseList();
+    });
+    input.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") document.getElementById("confirmAddExerciseBtn").click();
+    });
   }
 
   function computeGroupVolumeForDate(group, date) {
     var total = 0, sets = 0;
-    var exList = EXERCISES[group];
+    var exList = exercisesForGroup(group);
     state.entries.forEach(function(e) {
       if (e.date === date && exList.indexOf(e.exercise) !== -1) {
         total += (e.weight || 0) * (e.reps || 0);
@@ -1102,7 +1275,7 @@
   }
 
   function findPreviousGroupDate(group, beforeDate) {
-    var exList = EXERCISES[group];
+    var exList = exercisesForGroup(group);
     var dates = {};
     state.entries.forEach(function(e) {
       if (exList.indexOf(e.exercise) !== -1 && e.date < beforeDate) dates[e.date] = true;
@@ -1122,7 +1295,7 @@
       var pct = prevStats.total ? Math.round((diff / prevStats.total) * 100) : 0;
       diffHtml = '<div class="lasttime-feel">' + (diff >= 0 ? "+" : "") + Math.round(diff) + " lb\u00b7reps total volume vs " + escapeHtml(prevDate) + " (" + (pct >= 0 ? "+" : "") + pct + "%)</div>";
     }
-    var exList = EXERCISES[group];
+    var exList = exercisesForGroup(group);
     var prIndices = computePRIndices();
     var prCount = 0;
     state.entries.forEach(function(e, i) {
@@ -1315,10 +1488,10 @@
     return parts[1] + "/" + parts[2];
   }
 
-  function buildProgressHtml(exercise) {
+  function buildProgressHtml(exercise, limit) {
     var sessions = getExerciseSessions(exercise);
     if (sessions.length < 2) return "";
-    var recent = sessions.slice(-8);
+    var recent = sessions.slice(-(limit || 8));
     var weights = recent.map(function(s) { return s.weight; });
     var min = Math.min.apply(null, weights);
     var max = Math.max.apply(null, weights);
@@ -1477,8 +1650,18 @@
     window.setTimeout(closeLogSheet, 350);
   }
 
+  var audioCtx = null;
+  function ensureAudioCtx() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+    } catch (e) {}
+    return audioCtx;
+  }
+
   function startRestTimer(seconds) {
     stopRestTimer();
+    if (state.settings.soundEnabled) ensureAudioCtx();
     state.rest.total = seconds;
     state.rest.remaining = seconds;
     updateRestTimerUI();
@@ -1509,8 +1692,10 @@
   function finishRestTimer() {
     stopRestTimer();
     document.getElementById("restTimerBar").classList.remove("show");
-    try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (e) {}
-    playBeep();
+    if (state.settings.soundEnabled) {
+      try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (e) {}
+      playBeep();
+    }
     showToast("Rest complete");
   }
 
@@ -1521,17 +1706,66 @@
 
   function playBeep() {
     try {
-      var ctx = new (window.AudioContext || window.webkitAudioContext)();
-      var o = ctx.createOscillator();
-      var g = ctx.createGain();
-      o.frequency.value = 880;
-      o.connect(g);
-      g.connect(ctx.destination);
-      g.gain.setValueAtTime(0.2, ctx.currentTime);
-      o.start();
-      o.stop(ctx.currentTime + 0.3);
-      o.onended = function() { ctx.close(); };
+      var ctx = ensureAudioCtx();
+      if (!ctx) return;
+      var now = ctx.currentTime;
+      [0, 0.2].forEach(function(offset) {
+        var o = ctx.createOscillator();
+        var g = ctx.createGain();
+        o.frequency.value = 880;
+        o.connect(g);
+        g.connect(ctx.destination);
+        g.gain.setValueAtTime(0.0001, now + offset);
+        g.gain.exponentialRampToValueAtTime(0.25, now + offset + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.18);
+        o.start(now + offset);
+        o.stop(now + offset + 0.19);
+      });
     } catch (e) {}
+  }
+
+  function computeWeeklyTrendRows() {
+    var today = todayISO();
+    var rows = [];
+    GROUP_ORDER.forEach(function(group) {
+      var exList = exercisesForGroup(group);
+      var thisWeek = 0, lastWeek = 0;
+      state.entries.forEach(function(e) {
+        if (exList.indexOf(e.exercise) === -1) return;
+        var d = daysBetween(e.date, today);
+        var vol = (e.weight || 0) * (e.reps || 0);
+        if (d >= 0 && d < 7) thisWeek += vol;
+        else if (d >= 7 && d < 14) lastWeek += vol;
+      });
+      if (thisWeek > 0 || lastWeek > 0) rows.push({ group: group, thisWeek: thisWeek, lastWeek: lastWeek });
+    });
+    return rows;
+  }
+
+  function renderWeeklyTrendHtml() {
+    var rows = computeWeeklyTrendRows();
+    if (!rows.length) return "";
+    var rowsHtml = rows.map(function(r) {
+      var diff = r.thisWeek - r.lastWeek;
+      var cls = diff > 0 ? "up" : (diff < 0 ? "down" : "");
+      var deltaHtml;
+      if (!r.lastWeek) {
+        deltaHtml = '<span class="summary-ex-vol">no comparison yet</span>';
+      } else {
+        var pct = Math.round((diff / r.lastWeek) * 100);
+        deltaHtml = '<span class="summary-ex-vol" style="' + (cls === "up" ? "color:var(--success);" : cls === "down" ? "color:var(--danger);" : "") + '">' + (diff >= 0 ? "+" : "") + pct + '%</span>';
+      }
+      return (
+        '<div class="summary-ex-row">' +
+          '<div>' +
+            '<div class="summary-ex-name">' + escapeHtml(r.group) + '</div>' +
+            '<div class="summary-ex-sets">' + Math.round(r.thisWeek) + ' lb\u00b7reps this week' + (r.lastWeek ? ' (vs ' + Math.round(r.lastWeek) + ' last week)' : '') + '</div>' +
+          '</div>' +
+          deltaHtml +
+        '</div>'
+      );
+    }).join("");
+    return '<div class="lasttime-label" style="margin-bottom:8px;">THIS WEEK VS LAST WEEK</div><div class="lasttime-block" style="margin-bottom:20px;">' + rowsHtml + '</div>';
   }
 
   function renderHistory() {
@@ -1560,7 +1794,7 @@
           '</div>';
       });
     }
-    var html = listHtml +
+    var html = renderWeeklyTrendHtml() + listHtml +
       '<div class="clear-all-row">' +
         '<button class="util-btn" id="exportBtn">Back up data</button>' +
         '<button class="util-btn" id="importBtn">Restore from backup</button>' +
@@ -1883,6 +2117,9 @@
       btn.classList.toggle("active", btn.getAttribute("data-theme-choice") === state.settings.theme);
     });
     document.getElementById("restDurationInput").value = state.settings.restSeconds;
+    Array.prototype.forEach.call(document.querySelectorAll("#soundSegmented .seg-btn"), function(btn) {
+      btn.classList.toggle("active", btn.getAttribute("data-sound-choice") === (state.settings.soundEnabled ? "on" : "off"));
+    });
 
     var dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     var rowsHtml = dayNames.map(function(name, idx) {
@@ -1930,12 +2167,55 @@
     sheet.setAttribute("aria-hidden", "true");
   }
 
+  function populateProgressSelect() {
+    var sel = document.getElementById("progressExerciseSelect");
+    var prevVal = sel.value;
+    sel.innerHTML = GROUP_ORDER.map(function(g) {
+      var opts = exercisesForGroup(g).map(function(n) {
+        return '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>';
+      }).join("");
+      return '<optgroup label="' + escapeHtml(g) + '">' + opts + '</optgroup>';
+    }).join("");
+    if (prevVal && sel.querySelector('option[value="' + CSS.escape(prevVal) + '"]')) sel.value = prevVal;
+  }
+
+  function renderProgressView(exerciseName) {
+    var holder = document.getElementById("progressViewHolder");
+    if (!exerciseName) { holder.innerHTML = ""; return; }
+    var html = buildProgressHtml(exerciseName, 20);
+    var best = getBestCompleted(exerciseName);
+    var sessionCount = getExerciseSessions(exerciseName).length;
+    var headerHtml = '<div class="lasttime-block" style="margin-top:14px;">' +
+      '<div class="lasttime-label">' + escapeHtml(exerciseName) + '</div>' +
+      '<div class="lasttime-stats">' + (best ? best.weight + ' lb &times; ' + best.reps : '&mdash;') + '<small style="font-size:13px; color:var(--text-dim); margin-left:6px;">best set</small></div>' +
+      '<div class="lasttime-feel">' + sessionCount + ' session' + (sessionCount === 1 ? "" : "s") + ' logged</div>' +
+    '</div>';
+    holder.innerHTML = headerHtml + (html || '<div class="empty-state">Log at least two sessions of this exercise to see a trend.</div>');
+  }
+
+  function openProgress() {
+    populateProgressSelect();
+    var sel = document.getElementById("progressExerciseSelect");
+    if (sel.value) renderProgressView(sel.value);
+    else if (sel.options.length) { sel.selectedIndex = 0; renderProgressView(sel.value); }
+    var sheet = document.getElementById("progressSheet");
+    sheet.classList.add("open");
+    sheet.setAttribute("aria-hidden", "false");
+  }
+
+  function closeProgress() {
+    var sheet = document.getElementById("progressSheet");
+    sheet.classList.remove("open");
+    sheet.setAttribute("aria-hidden", "true");
+  }
+
   function init() {
     document.getElementById("todayLabel").textContent = todayDisplay();
     state.entries = loadEntries();
     state.settings = loadSettings();
     state.weightLog = loadWeightLog();
     state.notes = loadNotes();
+    state.customExercises = loadCustomExercises();
     applyTheme();
 
     var dow = new Date().getDay();
@@ -2001,6 +2281,20 @@
         applyTheme();
         renderSettingsSheet();
       });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("#soundSegmented .seg-btn"), function(btn) {
+      btn.addEventListener("click", function() {
+        state.settings.soundEnabled = btn.getAttribute("data-sound-choice") === "on";
+        saveSettings();
+        renderSettingsSheet();
+        if (state.settings.soundEnabled) ensureAudioCtx();
+      });
+    });
+
+    document.getElementById("progressBtn").addEventListener("click", openProgress);
+    document.getElementById("progressBack").addEventListener("click", closeProgress);
+    document.getElementById("progressExerciseSelect").addEventListener("change", function() {
+      renderProgressView(this.value);
     });
 
     document.getElementById("weightBtn").addEventListener("click", openWeightSheet);
