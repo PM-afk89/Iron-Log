@@ -505,6 +505,20 @@
     font-weight: 600;
     cursor: pointer;
   }
+  .file-btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .file-btn:active { background: var(--surface); }
   .backup-note { font-size: 12px; color: var(--text-dim); margin-bottom: 10px; }
 
   /* Header icon group */
@@ -1522,34 +1536,35 @@
 
   function renderHistory() {
     var body = document.getElementById("historyBody");
+    var listHtml;
     if (state.entries.length === 0) {
-      body.innerHTML = '<div class="empty-state">No sets logged yet. Everything you log will show up here.</div>';
-      return;
+      listHtml = '<div class="empty-state">No sets logged yet. Everything you log will show up here.</div>';
+    } else {
+      var sorted = state.entries.slice().sort(function(a, b) {
+        if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+        return (b.setNumber || 0) - (a.setNumber || 0);
+      });
+      var prIndices = computePRIndices();
+      listHtml = "";
+      sorted.forEach(function(e, idx) {
+        var realIdx = state.entries.indexOf(e);
+        var statusClass = e.status === "Completed" ? "status-completed" : "status-failed";
+        var prBadge = prIndices[realIdx] ? ' <span class="pr-badge">&#128293;</span>' : "";
+        listHtml +=
+          '<div class="hist-row">' +
+            '<div class="hist-main">' +
+              '<div class="hist-ex">' + escapeHtml(e.exercise) + prBadge + '</div>' +
+              '<div class="hist-meta">' + escapeHtml(e.date) + ' &middot; Set ' + e.setNumber + ' &middot; ' + e.weight + ' lb &times; ' + e.reps + ' &middot; <span class="' + statusClass + '">' + escapeHtml(e.status) + '</span></div>' +
+            '</div>' +
+            '<button class="del-btn" data-idx="' + realIdx + '">Delete</button>' +
+          '</div>';
+      });
     }
-    var sorted = state.entries.slice().sort(function(a, b) {
-      if (a.date !== b.date) return a.date < b.date ? 1 : -1;
-      return (b.setNumber || 0) - (a.setNumber || 0);
-    });
-    var prIndices = computePRIndices();
-    var html = "";
-    sorted.forEach(function(e, idx) {
-      var realIdx = state.entries.indexOf(e);
-      var statusClass = e.status === "Completed" ? "status-completed" : "status-failed";
-      var prBadge = prIndices[realIdx] ? ' <span class="pr-badge">&#128293;</span>' : "";
-      html +=
-        '<div class="hist-row">' +
-          '<div class="hist-main">' +
-            '<div class="hist-ex">' + escapeHtml(e.exercise) + prBadge + '</div>' +
-            '<div class="hist-meta">' + escapeHtml(e.date) + ' &middot; Set ' + e.setNumber + ' &middot; ' + e.weight + ' lb &times; ' + e.reps + ' &middot; <span class="' + statusClass + '">' + escapeHtml(e.status) + '</span></div>' +
-          '</div>' +
-          '<button class="del-btn" data-idx="' + realIdx + '">Delete</button>' +
-        '</div>';
-    });
-    html +=
+    var html = listHtml +
       '<div class="clear-all-row">' +
         '<button class="util-btn" id="exportBtn">Back up data</button>' +
         '<button class="util-btn" id="importBtn">Restore from backup</button>' +
-        '<button class="clear-all-btn" id="clearAllBtn">Clear all data</button>' +
+        (state.entries.length ? '<button class="clear-all-btn" id="clearAllBtn">Clear all data</button>' : '') +
         '<div id="backupPanelHolder"></div>' +
       '</div>';
     body.innerHTML = html;
@@ -1639,44 +1654,85 @@
         var holder = document.getElementById("backupPanelHolder");
         holder.innerHTML =
           '<div class="backup-panel">' +
-            '<div class="backup-note">Paste your backed-up text below. This adds those sets to what\u2019s already here \u2014 it won\u2019t create duplicates of sets that match exactly.</div>' +
-            '<textarea id="importArea" placeholder="Paste backup text here"></textarea>' +
-            '<div class="row-btns"><button id="doImportBtn">Restore</button></div>' +
+            '<div class="backup-note">Choose a backup file from your phone, or paste the text below. Either way, this adds those sets to what\u2019s already here \u2014 it won\u2019t create duplicates of sets that match exactly.</div>' +
+            '<div class="row-btns" style="margin-bottom:10px;"><label class="file-btn" for="importFileInput">Choose file&hellip;</label></div>' +
+            '<input type="file" id="importFileInput" accept="application/json,.json" style="display:none;">' +
+            '<textarea id="importArea" placeholder="...or paste backup text here"></textarea>' +
+            '<div class="row-btns"><button id="doImportBtn">Restore pasted text</button></div>' +
           '</div>';
-        document.getElementById("doImportBtn").addEventListener("click", function() {
-          var text = document.getElementById("importArea").value.trim();
-          if (!text) { showToast("Paste your backup text first"); return; }
+
+        function runImport(text) {
           var parsed;
           try {
             parsed = JSON.parse(text);
           } catch (e) {
-            showToast("That doesn't look like valid backup text");
+            showToast("That doesn't look like a valid backup file");
             return;
           }
-          if (!Array.isArray(parsed)) {
-            showToast("That doesn't look like valid backup text");
+          var result = mergeImportedPayload(parsed);
+          if (result === null) {
+            showToast("That doesn't look like a valid backup file");
             return;
           }
-          var existingKeys = {};
-          state.entries.forEach(function(e) { existingKeys[JSON.stringify(e)] = true; });
-          var added = 0;
-          parsed.forEach(function(e) {
-            if (e && typeof e === "object" && e.exercise && e.date) {
-              var key = JSON.stringify(e);
-              if (!existingKeys[key]) {
-                state.entries.push(e);
-                existingKeys[key] = true;
-                added++;
-              }
-            }
-          });
-          saveEntries();
           renderHistory();
           renderExerciseList();
-          showToast(added + " set" + (added === 1 ? "" : "s") + " restored");
+          showToast(result.entriesAdded + " set" + (result.entriesAdded === 1 ? "" : "s") + " restored" + (result.notesAdded ? " (" + result.notesAdded + " note" + (result.notesAdded === 1 ? "" : "s") + ")" : ""));
+        }
+
+        document.getElementById("importFileInput").addEventListener("change", function(e) {
+          var file = e.target.files[0];
+          if (!file) return;
+          var reader = new FileReader();
+          reader.onload = function() { runImport(reader.result); };
+          reader.onerror = function() { showToast("Couldn't read that file"); };
+          reader.readAsText(file);
+          e.target.value = "";
+        });
+
+        document.getElementById("doImportBtn").addEventListener("click", function() {
+          var text = document.getElementById("importArea").value.trim();
+          if (!text) { showToast("Paste your backup text first"); return; }
+          runImport(text);
         });
       });
     }
+  }
+
+  function mergeImportedPayload(parsed) {
+    var entriesToAdd, notesToMerge = {};
+    if (Array.isArray(parsed)) {
+      entriesToAdd = parsed;
+    } else if (parsed && typeof parsed === "object" && Array.isArray(parsed.entries)) {
+      entriesToAdd = parsed.entries;
+      if (parsed.notes && typeof parsed.notes === "object") notesToMerge = parsed.notes;
+    } else {
+      return null;
+    }
+    var existingKeys = {};
+    state.entries.forEach(function(e) { existingKeys[JSON.stringify(e)] = true; });
+    var entriesAdded = 0;
+    entriesToAdd.forEach(function(e) {
+      if (e && typeof e === "object" && e.exercise && e.date) {
+        var key = JSON.stringify(e);
+        if (!existingKeys[key]) {
+          state.entries.push(e);
+          existingKeys[key] = true;
+          entriesAdded++;
+        }
+      }
+    });
+    saveEntries();
+    var notesAdded = 0;
+    Object.keys(notesToMerge).forEach(function(name) {
+      if (!state.notes[name]) {
+        var n = notesToMerge[name];
+        if (typeof n === "string") state.notes[name] = { text: n, tag: "none" };
+        else if (n && typeof n === "object") state.notes[name] = { text: n.text || "", tag: n.tag || "none" };
+        notesAdded++;
+      }
+    });
+    if (notesAdded) saveNotes();
+    return { entriesAdded: entriesAdded, notesAdded: notesAdded };
   }
 
   function markBackedUp() {
