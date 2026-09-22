@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Iron Log</title>
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAACRElEQVR4nO3cMU4CURRAUTGugRBrGxtaWhfheixcma2tDY2LsbBT7zgWP3/Uc9ohzOPl5gMhYbc/XF/AVy5nD8B2iYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYN0NfoG55fnunR7PI2++98wa4djT46FV/XtVd5N3OHAONbMrY9lc3c4Ko71E+ujTN/hkDh+Oqs+PtvCDn1bIYmDJA6SOEjiIImDJA6SOEjiIImDJA6SOEjiIImDJA6SOEjiIImDJA6SOEjiIImDJA6SOEjiIImDJA7S8P/nWOnp4Wb2CHzk5CCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJg7SVn+zvHl9nj7At5/vZEzg5WCAOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhIQ+K4PZ6GPv4/2MIOR50c62dVRpm+w4FvK2smVsayuTsc+5ljeW5lrDFxh7v94Xrcs/Or+bZCEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBegObvTwobKjFlQAAAABJRU5ErkJggg==">
+<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAACRElEQVR4nO3cMU4CURRAUTGugRBrGxtaWhfheixcma2tDY2LsbBT7zgWP3/Uc9ohzOPl5gMhYbc/XF/AVy5nD8B2iYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYN0NfoG55fnunR7PI2++98wa4djT46FV/XtVd5N3OHAONbMrY9lc3c4Ko71E+ujTN/hkDh+Oqs+PtvCDn1bIYmDJA6SOEjiIImDJA6SOEjiIImDJA6SOEjiIImDJA6SOEjiIImDJA6SOEjiIImDJA6SOEjiIImDJA7S8P/nWOnp4Wb2CHzk5CCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJg7SVn+zvHl9nj7At5/vZEzg5WCAOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhIQ+K4PZ6GPv4/2MIOR50c62dVRpm+w4FvK2smVsayuTsc+5ljeW5lrDFxh7v94Xrcs/Or+bZCEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBegObvTwobKjFlQAAAABJRU5ErkJggg==">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #EDEAE3;
+    --surface: #FFFFFF;
+    --surface-2: #F6F3ED;
+    --border: #D9D3C6;
+    --text: #201D19;
+    --text-dim: #6E695F;
+    --accent: #B4772A;
+    --accent-text: #FFFFFF;
+    --danger: #A8402F;
+    --success: #3C6E4A;
+    --font-display: 'Bebas Neue', Impact, 'Arial Narrow Bold', sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16181A;
+      --surface: #1F2224;
+      --surface-2: #262A2C;
+      --border: #34393C;
+      --text: #EDEAE3;
+      --text-dim: #9A9690;
+      --accent: #D6963E;
+      --accent-text: #16181A;
+      --danger: #E4664F;
+      --success: #6BBE86;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16181A;
+    --surface: #1F2224;
+    --surface-2: #262A2C;
+    --border: #34393C;
+    --text: #EDEAE3;
+    --text-dim: #9A9690;
+    --accent: #D6963E;
+    --accent-text: #16181A;
+    --danger: #E4664F;
+    --success: #6BBE86;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    overscroll-behavior-y: none;
+  }
+  button, input, textarea { font-family: inherit; color: inherit; }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+
+  .app {
+    max-width: 640px;
+    margin: 0 auto;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header.top {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--bg);
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 0 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .top-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .brand {
+    font-family: var(--font-display);
+    font-size: 30px;
+    letter-spacing: 0.5px;
+    line-height: 1;
+  }
+  .brand span { color: var(--accent); }
+  .today {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .icon-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 20px;
+    padding: 6px 8px;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .icon-btn:active { color: var(--text); }
+
+  nav.tabs {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 10px 12px 0 12px;
+    scrollbar-width: none;
+  }
+  nav.tabs::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex: 0 0 auto;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-family: var(--font-display);
+    font-size: 17px;
+    letter-spacing: 0.5px;
+    padding: 8px 12px 12px 12px;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+  }
+  .tab-btn.active {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+  }
+
+  main {
+    flex: 1;
+    padding: 4px 18px 100px 18px;
+    overflow-x: auto;
+  }
+
+  .ex-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 4px;
+    border-bottom: 1px solid var(--border);
+    background: none;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    color: var(--text);
+  }
+  .ex-row:active { background: var(--surface-2); }
+  .ex-main { min-width: 0; }
+  .ex-name {
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+  .ex-last {
+    font-size: 13px;
+    color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ex-last .status-completed { color: var(--success); }
+  .ex-last .status-failed { color: var(--danger); }
+  .chev { color: var(--text-dim); font-size: 20px; flex-shrink: 0; }
+
+  /* Sheet overlay */
+  .sheet-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(100%);
+    transition: transform 0.28s ease;
+  }
+  .sheet-overlay.open { transform: translateY(0); }
+  .sheet-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .back-btn {
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 4px 6px 4px 0;
+    line-height: 1;
+  }
+  .sheet-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    letter-spacing: 0.3px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .sheet-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px 18px 24px 18px;
+  }
+
+  .lasttime-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+  }
+  .lasttime-label {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .lasttime-stats {
+    font-family: var(--font-display);
+    font-size: 24px;
+    letter-spacing: 0.3px;
+  }
+  .lasttime-feel {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    font-style: italic;
+  }
+  .target-line {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    font-size: 14px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .empty-last {
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  .progress-block {
+    margin-bottom: 22px;
+  }
+  .progress-summary {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+  .progress-summary strong { color: var(--success); font-weight: 700; }
+  .spark-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 96px;
+    padding: 0 2px;
+    overflow-x: auto;
+  }
+  .spark-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 0 0 auto;
+    width: 34px;
+  }
+  .spark-weight {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+    white-space: nowrap;
+  }
+  .spark-bar {
+    width: 20px;
+    border-radius: 3px 3px 0 0;
+    background: var(--border);
+  }
+  .spark-col.latest .spark-bar { background: var(--accent); }
+  .spark-col.latest .spark-weight { color: var(--accent); font-weight: 700; }
+  .spark-date {
+    font-size: 9px;
+    color: var(--text-dim);
+    margin-top: 5px;
+    white-space: nowrap;
+  }
+  .ceiling-note {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+
+  .field {
+    margin-bottom: 18px;
+  }
+  .field label {
+    display: block;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .num-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .stepper-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 20px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .stepper-btn:active { background: var(--surface-2); }
+  input[type="number"], input[type="text"] {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 17px;
+    color: var(--text);
+  }
+  .num-row input[type="number"] {
+    text-align: center;
+    font-family: var(--font-display);
+    font-size: 22px;
+  }
+  input::placeholder { color: var(--text-dim); opacity: 0.7; }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .segmented {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .seg-btn {
+    flex: 1;
+    padding: 11px 0;
+    background: var(--surface);
+    border: none;
+    color: var(--text-dim);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    border-right: 1px solid var(--border);
+  }
+  .seg-btn:last-child { border-right: none; }
+  .seg-btn.active.completed { background: var(--success); color: #fff; }
+  .seg-btn.active.failed { background: var(--danger); color: #fff; }
+
+  .sheet-footer {
+    padding: 14px 18px calc(14px + env(safe-area-inset-bottom, 0px)) 18px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .log-btn {
+    width: 100%;
+    background: var(--accent);
+    color: var(--accent-text);
+    border: none;
+    border-radius: 8px;
+    padding: 16px;
+    font-family: var(--font-display);
+    font-size: 19px;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+  }
+  .log-btn:active { opacity: 0.85; }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    transform: translate(-50%, 12px);
+    background: var(--text);
+    color: var(--bg);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    z-index: 40;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  /* History sheet */
+  .hist-row {
+    padding: 12px 4px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .hist-main { min-width: 0; }
+  .hist-ex { font-weight: 600; font-size: 15px; }
+  .hist-meta { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .del-btn {
+    background: none;
+    border: none;
+    color: var(--danger);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 6px 8px;
+    flex-shrink: 0;
+  }
+  .empty-state {
+    text-align: center;
+    color: var(--text-dim);
+    padding: 60px 20px;
+    font-size: 15px;
+  }
+  .clear-all-row {
+    padding: 20px 4px 8px 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .clear-all-btn, .util-btn {
+    width: 100%;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .clear-all-btn { border-color: var(--danger); color: var(--danger); }
+  .backup-panel {
+    margin-top: 10px;
+    padding: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .backup-panel textarea {
+    width: 100%;
+    min-height: 110px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 12px;
+    font-family: monospace;
+    color: var(--text);
+    resize: vertical;
+    margin-bottom: 10px;
+  }
+  .backup-panel .row-btns { display: flex; gap: 8px; }
+  .backup-panel .row-btns button {
+    flex: 1;
+    background: var(--accent);
+    color: var(--accent-text);
+    border: none;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .backup-note { font-size: 12px; color: var(--text-dim); margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="top-row">
+      <div>
+        <div class="brand">IRON <span>LOG</span></div>
+        <div class="today" id="todayLabel"></div>
+      </div>
+      <button class="icon-btn" id="historyBtn" aria-label="View history">&#128337;</button>
+    </div>
+    <nav class="tabs" id="tabs"></nav>
+  </header>
+  <main id="exerciseList"></main>
+</div>
+
+<!-- Log Sheet -->
+<div class="sheet-overlay" id="logSheet" aria-hidden="true">
+  <div class="sheet-header">
+    <button class="back-btn" id="logBack" aria-label="Back">&#8592;</button>
+    <div class="sheet-title" id="logTitle"></div>
+  </div>
+  <div class="sheet-body">
+    <div id="lastTimeBlock"></div>
+
+    <div class="field">
+      <label for="setNumberInput">Set number</label>
+      <div class="num-row">
+        <button class="stepper-btn" id="setMinus">&#8722;</button>
+        <input type="number" id="setNumberInput" inputmode="numeric">
+        <button class="stepper-btn" id="setPlus">&#43;</button>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="field">
+        <label for="weightInput">Weight (lb)</label>
+        <input type="number" id="weightInput" inputmode="decimal" placeholder="0">
+      </div>
+      <div class="field">
+        <label for="repsInput">Reps</label>
+        <input type="number" id="repsInput" inputmode="numeric" placeholder="0">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Status</label>
+      <div class="segmented">
+        <button class="seg-btn completed" id="statusCompleted">Completed</button>
+        <button class="seg-btn failed" id="statusFailed">Failed</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="feelInput">How did it feel?</label>
+      <input type="text" id="feelInput" placeholder="Optional">
+    </div>
+  </div>
+  <div class="sheet-footer">
+    <button class="log-btn" id="logSetBtn">Log set</button>
+  </div>
+</div>
+
+<!-- History Sheet -->
+<div class="sheet-overlay" id="historySheet" aria-hidden="true">
+  <div class="sheet-header">
+    <button class="back-btn" id="historyBack" aria-label="Back">&#8592;</button>
+    <div class="sheet-title">History</div>
+  </div>
+  <div class="sheet-body" id="historyBody"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+  "use strict";
+
+  var STORAGE_KEY = "ironlog_entries_v1";
+
+  var EXERCISES = {
+    "Back": ["Weighted Pull Ups", "Close Lat Pull Downs", "Single Arm Seated Rows", "Lat Push Downs", "Face Pulls", "Lower Back Extensions"],
+    "Chest": ["Flat Bench", "Incline Press", "Decline Press", "Peck Flys", "Upper Cross Press", "Pull Overs"],
+    "Legs": ["Leg Press", "Hack Squat", "Power Squat", "Single Leg Ext", "Calf Raises"],
+    "Biceps": ["Seated Single Arm Curls", "Preacher Curls Close", "Preacher Curls Wide", "Hammer Curls Cross", "Isometric Rotations"],
+    "Triceps": ["Rope Overhead Extensions", "Skull Crushers", "Rope Push Downs", "Cross Body Single Arm", "Weighted Dips"],
+    "Shoulders": ["Rope Overhead Press", "Rope Front Raises", "Seated Cross Body Raises", "Rope Side Raises", "Overhead Pulls", "Rear Flys", "Shrugs"]
+  };
+
+  var GROUP_ORDER = ["Back", "Chest", "Legs", "Biceps", "Triceps", "Shoulders"];
+
+  var REP_CEILING = 12;
+  var REP_FLOOR = 6;
+  var WEIGHT_INCREMENT = 5;
+
+  var state = {
+    activeGroup: "Back",
+    entries: [],
+    currentExercise: null,
+    currentGroup: null,
+    currentStatus: "Completed"
+  };
+
+  function loadEntries() {
+    try {
+      var raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      var parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveEntries() {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state.entries));
+    } catch (e) {
+      // storage unavailable; app still works for this session
+    }
+  }
+
+  function todayISO() {
+    var d = new Date();
+    var m = String(d.getMonth() + 1).padStart(2, "0");
+    var day = String(d.getDate()).padStart(2, "0");
+    return d.getFullYear() + "-" + m + "-" + day;
+  }
+
+  function todayDisplay() {
+    var d = new Date();
+    return d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  }
+
+  function escapeHtml(str) {
+    var div = document.createElement("div");
+    div.textContent = str == null ? "" : String(str);
+    return div.innerHTML;
+  }
+
+  function lastEntryFor(exercise) {
+    var matches = state.entries.filter(function(e) { return e.exercise === exercise; });
+    if (matches.length === 0) return null;
+    matches.sort(function(a, b) {
+      if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+      return (a.setNumber || 0) - (b.setNumber || 0);
+    });
+    return matches[matches.length - 1];
+  }
+
+  function todaysSetCount(exercise) {
+    var t = todayISO();
+    return state.entries.filter(function(e) { return e.exercise === exercise && e.date === t; }).length;
+  }
+
+  function renderTabs() {
+    var tabsEl = document.getElementById("tabs");
+    tabsEl.innerHTML = "";
+    GROUP_ORDER.forEach(function(group) {
+      var btn = document.createElement("button");
+      btn.className = "tab-btn" + (group === state.activeGroup ? " active" : "");
+      btn.textContent = group;
+      btn.addEventListener("click", function() {
+        state.activeGroup = group;
+        renderTabs();
+        renderExerciseList();
+      });
+      tabsEl.appendChild(btn);
+    });
+  }
+
+  function renderExerciseList() {
+    var listEl = document.getElementById("exerciseList");
+    listEl.innerHTML = "";
+    var exercises = EXERCISES[state.activeGroup];
+    exercises.forEach(function(exName) {
+      var last = lastEntryFor(exName);
+      var row = document.createElement("button");
+      row.className = "ex-row";
+      var lastHtml;
+      if (last) {
+        var statusClass = last.status === "Completed" ? "status-completed" : "status-failed";
+        lastHtml = last.weight + " lb &times; " + last.reps + " &mdash; <span class=\"" + statusClass + "\">" + escapeHtml(last.status) + "</span>";
+      } else {
+        lastHtml = "No sets logged yet";
+      }
+      row.innerHTML =
+        '<div class="ex-main">' +
+          '<div class="ex-name">' + escapeHtml(exName) + '</div>' +
+          '<div class="ex-last">' + lastHtml + '</div>' +
+        '</div>' +
+        '<div class="chev">&#8250;</div>';
+      row.addEventListener("click", function() {
+        openLogSheet(state.activeGroup, exName);
+      });
+      listEl.appendChild(row);
+    });
+  }
+
+  function suggestedTarget(last) {
+    if (!last) return null;
+    if (last.status === "Completed") {
+      if (last.reps >= REP_CEILING) {
+        return {
+          weight: last.weight + WEIGHT_INCREMENT,
+          reps: REP_FLOOR,
+          note: "reps hit " + REP_CEILING + " \u2014 step the weight up, reps back to " + REP_FLOOR
+        };
+      }
+      return { weight: last.weight, reps: last.reps + 1, note: "+1 rep at the same weight" };
+    }
+    return { weight: last.weight, reps: last.reps, note: "repeat this weight and reps" };
+  }
+
+  function getExerciseSessions(exercise) {
+    var byDate = {};
+    state.entries.forEach(function(e) {
+      if (e.exercise !== exercise) return;
+      var existing = byDate[e.date];
+      if (!existing || (e.setNumber || 0) >= (existing.setNumber || 0)) {
+        byDate[e.date] = e;
+      }
+    });
+    var sessions = Object.keys(byDate).map(function(d) { return byDate[d]; });
+    sessions.sort(function(a, b) { return a.date < b.date ? -1 : 1; });
+    return sessions;
+  }
+
+  function shortDate(iso) {
+    var parts = iso.split("-");
+    if (parts.length !== 3) return iso;
+    return parts[1] + "/" + parts[2];
+  }
+
+  function buildProgressHtml(exercise) {
+    var sessions = getExerciseSessions(exercise);
+    if (sessions.length < 2) return "";
+    var recent = sessions.slice(-8);
+    var weights = recent.map(function(s) { return s.weight; });
+    var min = Math.min.apply(null, weights);
+    var max = Math.max.apply(null, weights);
+    var first = sessions[0];
+    var latest = sessions[sessions.length - 1];
+    var weightDiff = latest.weight - first.weight;
+    var repDiff = latest.reps - first.reps;
+    var diffParts = [];
+    if (weightDiff !== 0) diffParts.push((weightDiff > 0 ? "+" : "") + weightDiff + " lb");
+    if (repDiff !== 0) diffParts.push((repDiff > 0 ? "+" : "") + repDiff + " reps");
+    var summary = diffParts.length
+      ? "Since your first logged set: <strong>" + diffParts.join(", ") + "</strong>"
+      : "Same weight and reps as your first logged set so far.";
+
+    var barsHtml = recent.map(function(s, i) {
+      var range = max - min;
+      var heightPx = range === 0 ? 44 : 24 + ((s.weight - min) / range) * 48;
+      var isLatest = i === recent.length - 1;
+      return (
+        '<div class="spark-col' + (isLatest ? ' latest' : '') + '">' +
+          '<div class="spark-weight">' + s.weight + '</div>' +
+          '<div class="spark-bar" style="height:' + Math.round(heightPx) + 'px"></div>' +
+          '<div class="spark-date">' + shortDate(s.date) + '</div>' +
+        '</div>'
+      );
+    }).join("");
+
+    return (
+      '<div class="progress-block">' +
+        '<div class="lasttime-label">PROGRESS</div>' +
+        '<div class="progress-summary">' + summary + '</div>' +
+        '<div class="spark-row">' + barsHtml + '</div>' +
+      '</div>'
+    );
+  }
+
+  function openLogSheet(group, exName) {
+    state.currentGroup = group;
+    state.currentExercise = exName;
+    state.currentStatus = "Completed";
+
+    document.getElementById("logTitle").textContent = exName;
+
+    var last = lastEntryFor(exName);
+    var block = document.getElementById("lastTimeBlock");
+    if (last) {
+      var target = suggestedTarget(last);
+      var statusClass = last.status === "Completed" ? "status-completed" : "status-failed";
+      block.innerHTML =
+        '<div class="lasttime-block">' +
+          '<div class="lasttime-label">LAST TIME &middot; ' + escapeHtml(last.date) + '</div>' +
+          '<div class="lasttime-stats">' + last.weight + ' lb &times; ' + last.reps + ' <span class="' + statusClass + '">&mdash; ' + escapeHtml(last.status) + '</span></div>' +
+          (last.feel ? '<div class="lasttime-feel">&ldquo;' + escapeHtml(last.feel) + '&rdquo;</div>' : '') +
+          (target ? '<div class="target-line">Target today: ' + target.weight + ' lb &times; ' + target.reps + ' (' + target.note + ')</div>' : '') +
+        '</div>' +
+        buildProgressHtml(exName);
+      document.getElementById("weightInput").value = target ? target.weight : "";
+      document.getElementById("repsInput").value = target ? target.reps : "";
+    } else {
+      block.innerHTML = '<div class="lasttime-block"><div class="empty-last">No previous sets for this exercise. Log your first one below.</div></div>';
+      document.getElementById("weightInput").value = "";
+      document.getElementById("repsInput").value = "";
+    }
+
+    document.getElementById("setNumberInput").value = todaysSetCount(exName) + 1;
+    document.getElementById("feelInput").value = "";
+    setStatus("Completed");
+
+    var sheet = document.getElementById("logSheet");
+    sheet.classList.add("open");
+    sheet.setAttribute("aria-hidden", "false");
+  }
+
+  function closeLogSheet() {
+    var sheet = document.getElementById("logSheet");
+    sheet.classList.remove("open");
+    sheet.setAttribute("aria-hidden", "true");
+  }
+
+  function setStatus(status) {
+    state.currentStatus = status;
+    document.getElementById("statusCompleted").classList.toggle("active", status === "Completed");
+    document.getElementById("statusFailed").classList.toggle("active", status === "Failed");
+  }
+
+  function showToast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    window.setTimeout(function() { t.classList.remove("show"); }, 1600);
+  }
+
+  function logCurrentSet() {
+    var weight = parseFloat(document.getElementById("weightInput").value);
+    var reps = parseInt(document.getElementById("repsInput").value, 10);
+    var setNumber = parseInt(document.getElementById("setNumberInput").value, 10) || 1;
+    var feel = document.getElementById("feelInput").value.trim();
+
+    if (isNaN(weight) || isNaN(reps)) {
+      showToast("Enter weight and reps");
+      return;
+    }
+
+    var entry = {
+      date: todayISO(),
+      muscleGroup: state.currentGroup,
+      exercise: state.currentExercise,
+      setNumber: setNumber,
+      weight: weight,
+      reps: reps,
+      status: state.currentStatus,
+      feel: feel
+    };
+    state.entries.push(entry);
+    saveEntries();
+    showToast("Set logged");
+    renderExerciseList();
+    window.setTimeout(closeLogSheet, 350);
+  }
+
+  function renderHistory() {
+    var body = document.getElementById("historyBody");
+    if (state.entries.length === 0) {
+      body.innerHTML = '<div class="empty-state">No sets logged yet. Everything you log will show up here.</div>';
+      return;
+    }
+    var sorted = state.entries.slice().sort(function(a, b) {
+      if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+      return (b.setNumber || 0) - (a.setNumber || 0);
+    });
+    var html = "";
+    sorted.forEach(function(e, idx) {
+      var realIdx = state.entries.indexOf(e);
+      var statusClass = e.status === "Completed" ? "status-completed" : "status-failed";
+      html +=
+        '<div class="hist-row">' +
+          '<div class="hist-main">' +
+            '<div class="hist-ex">' + escapeHtml(e.exercise) + '</div>' +
+            '<div class="hist-meta">' + escapeHtml(e.date) + ' &middot; Set ' + e.setNumber + ' &middot; ' + e.weight + ' lb &times; ' + e.reps + ' &middot; <span class="' + statusClass + '">' + escapeHtml(e.status) + '</span></div>' +
+          '</div>' +
+          '<button class="del-btn" data-idx="' + realIdx + '">Delete</button>' +
+        '</div>';
+    });
+    html +=
+      '<div class="clear-all-row">' +
+        '<button class="util-btn" id="exportBtn">Back up data</button>' +
+        '<button class="util-btn" id="importBtn">Restore from backup</button>' +
+        '<button class="clear-all-btn" id="clearAllBtn">Clear all data</button>' +
+        '<div id="backupPanelHolder"></div>' +
+      '</div>';
+    body.innerHTML = html;
+
+    Array.prototype.forEach.call(body.querySelectorAll(".del-btn"), function(btn) {
+      btn.addEventListener("click", function() {
+        var i = parseInt(btn.getAttribute("data-idx"), 10);
+        state.entries.splice(i, 1);
+        saveEntries();
+        renderHistory();
+        renderExerciseList();
+      });
+    });
+
+    var clearBtn = document.getElementById("clearAllBtn");
+    if (clearBtn) {
+      clearBtn.addEventListener("click", function() {
+        if (window.confirm("Delete every logged set? This can't be undone.")) {
+          state.entries = [];
+          saveEntries();
+          renderHistory();
+          renderExerciseList();
+        }
+      });
+    }
+
+    var exportBtn = document.getElementById("exportBtn");
+    if (exportBtn) {
+      exportBtn.addEventListener("click", function() {
+        var holder = document.getElementById("backupPanelHolder");
+        var json = JSON.stringify(state.entries);
+        holder.innerHTML =
+          '<div class="backup-panel">' +
+            '<div class="backup-note">Copy this text and save it somewhere safe (Notes, an email to yourself, etc). Paste it back in on your new phone using "Restore from backup."</div>' +
+            '<textarea readonly id="exportArea"></textarea>' +
+            '<div class="row-btns"><button id="copyBackupBtn">Copy to clipboard</button></div>' +
+          '</div>';
+        document.getElementById("exportArea").value = json;
+        document.getElementById("exportArea").select();
+        document.getElementById("copyBackupBtn").addEventListener("click", function() {
+          var area = document.getElementById("exportArea");
+          area.select();
+          var copied = false;
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(area.value);
+              copied = true;
+            }
+          } catch (e) { copied = false; }
+          if (!copied) {
+            try { document.execCommand("copy"); copied = true; } catch (e2) { copied = false; }
+          }
+          showToast(copied ? "Copied" : "Select the text above and copy manually");
+        });
+      });
+    }
+
+    var importBtn = document.getElementById("importBtn");
+    if (importBtn) {
+      importBtn.addEventListener("click", function() {
+        var holder = document.getElementById("backupPanelHolder");
+        holder.innerHTML =
+          '<div class="backup-panel">' +
+            '<div class="backup-note">Paste your backed-up text below. This adds those sets to what\u2019s already here \u2014 it won\u2019t create duplicates of sets that match exactly.</div>' +
+            '<textarea id="importArea" placeholder="Paste backup text here"></textarea>' +
+            '<div class="row-btns"><button id="doImportBtn">Restore</button></div>' +
+          '</div>';
+        document.getElementById("doImportBtn").addEventListener("click", function() {
+          var text = document.getElementById("importArea").value.trim();
+          if (!text) { showToast("Paste your backup text first"); return; }
+          var parsed;
+          try {
+            parsed = JSON.parse(text);
+          } catch (e) {
+            showToast("That doesn't look like valid backup text");
+            return;
+          }
+          if (!Array.isArray(parsed)) {
+            showToast("That doesn't look like valid backup text");
+            return;
+          }
+          var existingKeys = {};
+          state.entries.forEach(function(e) { existingKeys[JSON.stringify(e)] = true; });
+          var added = 0;
+          parsed.forEach(function(e) {
+            if (e && typeof e === "object" && e.exercise && e.date) {
+              var key = JSON.stringify(e);
+              if (!existingKeys[key]) {
+                state.entries.push(e);
+                existingKeys[key] = true;
+                added++;
+              }
+            }
+          });
+          saveEntries();
+          renderHistory();
+          renderExerciseList();
+          showToast(added + " set" + (added === 1 ? "" : "s") + " restored");
+        });
+      });
+    }
+  }
+
+  function openHistory() {
+    renderHistory();
+    var sheet = document.getElementById("historySheet");
+    sheet.classList.add("open");
+    sheet.setAttribute("aria-hidden", "false");
+  }
+
+  function closeHistory() {
+    var sheet = document.getElementById("historySheet");
+    sheet.classList.remove("open");
+    sheet.setAttribute("aria-hidden", "true");
+  }
+
+  function init() {
+    document.getElementById("todayLabel").textContent = todayDisplay();
+    state.entries = loadEntries();
+    renderTabs();
+    renderExerciseList();
+
+    document.getElementById("logBack").addEventListener("click", closeLogSheet);
+    document.getElementById("logSetBtn").addEventListener("click", logCurrentSet);
+    document.getElementById("statusCompleted").addEventListener("click", function() { setStatus("Completed"); });
+    document.getElementById("statusFailed").addEventListener("click", function() { setStatus("Failed"); });
+    document.getElementById("setMinus").addEventListener("click", function() {
+      var input = document.getElementById("setNumberInput");
+      var v = parseInt(input.value, 10) || 1;
+      input.value = Math.max(1, v - 1);
+    });
+    document.getElementById("setPlus").addEventListener("click", function() {
+      var input = document.getElementById("setNumberInput");
+      var v = parseInt(input.value, 10) || 1;
+      input.value = v + 1;
+    });
+
+    document.getElementById("historyBtn").addEventListener("click", openHistory);
+    document.getElementById("historyBack").addEventListener("click", closeHistory);
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+</body>
+</html>
