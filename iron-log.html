@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Iron Log</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Iron Log">
+<meta name="theme-color" content="#16181A">
+<link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAACRElEQVR4nO3cMU4CURRAUTGugRBrGxtaWhfheixcma2tDY2LsbBT7zgWP3/Uc9ohzOPl5gMhYbc/XF/AVy5nD8B2iYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYN0NfoG55fnunR7PI2++98wa4djT46FV/XtVd5N3OHAONbMrY9lc3c4Ko71E+ujTN/hkDh+Oqs+PtvCDn1bIYmDJA6SOEjiIImDJA6SOEjiIImDJA6SOEjiIImDJA6SOEjiIImDJA6SOEjiIImDJA6SOEjiIImDJA7S8P/nWOnp4Wb2CHzk5CCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJg7SVn+zvHl9nj7At5/vZEzg5WCAOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhIQ+K4PZ6GPv4/2MIOR50c62dVRpm+w4FvK2smVsayuTsc+5ljeW5lrDFxh7v94Xrcs/Or+bZCEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBegObvTwobKjFlQAAAABJRU5ErkJggg==">
 <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAACRElEQVR4nO3cMU4CURRAUTGugRBrGxtaWhfheixcma2tDY2LsbBT7zgWP3/Uc9ohzOPl5gMhYbc/XF/AVy5nD8B2iYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYN0NfoG55fnunR7PI2++98wa4djT46FV/XtVd5N3OHAONbMrY9lc3c4Ko71E+ujTN/hkDh+Oqs+PtvCDn1bIYmDJA6SOEjiIImDJA6SOEjiIImDJA6SOEjiIImDJA6SOEjiIImDJA6SOEjiIImDJA6SOEjiIImDJA7S8P/nWOnp4Wb2CHzk5CCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJg7SVn+zvHl9nj7At5/vZEzg5WCAOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhIQ+K4PZ6GPv4/2MIOR50c62dVRpm+w4FvK2smVsayuTsc+5ljeW5lrDFxh7v94Xrcs/Or+bZCEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBEgdJHCRxkMRBegObvTwobKjFlQAAAABJRU5ErkJggg==">
 
@@ -593,9 +598,8 @@
 
   var GROUP_ORDER = ["Back", "Chest", "Legs", "Biceps", "Triceps", "Shoulders"];
 
-  var REP_CEILING = 12;
-  var REP_FLOOR = 6;
-  var WEIGHT_INCREMENT = 5;
+  var WEEKS_PER_CYCLE = 5;
+  var WEIGHT_INCREMENT_PER_CYCLE = 5;
 
   var state = {
     activeGroup: "Back",
@@ -702,19 +706,57 @@
     });
   }
 
-  function suggestedTarget(last) {
-    if (!last) return null;
-    if (last.status === "Completed") {
-      if (last.reps >= REP_CEILING) {
-        return {
-          weight: last.weight + WEIGHT_INCREMENT,
-          reps: REP_FLOOR,
-          note: "reps hit " + REP_CEILING + " \u2014 step the weight up, reps back to " + REP_FLOOR
-        };
+  function lastPriorSessionEntry(exercise) {
+    var today = todayISO();
+    var sessions = getExerciseSessions(exercise).filter(function(s) { return s.date !== today; });
+    if (sessions.length === 0) return null;
+    return sessions[sessions.length - 1];
+  }
+
+  function lastPriorSessionEntry(exercise) {
+    var today = todayISO();
+    var sessions = getExerciseSessions(exercise).filter(function(s) { return s.date !== today; });
+    if (sessions.length === 0) return null;
+    return sessions[sessions.length - 1];
+  }
+
+  function computeCycleSuggestion(exercise) {
+    var today = todayISO();
+    var sessions = getExerciseSessions(exercise).filter(function(s) { return s.date !== today; });
+    if (sessions.length === 0) return null;
+
+    var lastWeight = sessions[sessions.length - 1].weight;
+    var streak = [];
+    for (var i = sessions.length - 1; i >= 0; i--) {
+      if (sessions[i].weight === lastWeight) {
+        streak.unshift(sessions[i]);
+      } else {
+        break;
       }
-      return { weight: last.weight, reps: last.reps + 1, note: "+1 rep at the same weight" };
     }
-    return { weight: last.weight, reps: last.reps, note: "repeat this weight and reps" };
+    var weekNumber = streak.length;
+    var lastSession = streak[streak.length - 1];
+    var cycleBaseReps = streak[0].reps;
+
+    if (lastSession.status === "Failed") {
+      return {
+        weight: lastSession.weight,
+        reps: lastSession.reps,
+        note: "retry \u2014 week " + weekNumber + " of " + WEEKS_PER_CYCLE
+      };
+    }
+    if (weekNumber >= WEEKS_PER_CYCLE) {
+      return {
+        weight: lastSession.weight + WEIGHT_INCREMENT_PER_CYCLE,
+        reps: cycleBaseReps,
+        note: "cycle complete \u2014 new cycle: +" + WEIGHT_INCREMENT_PER_CYCLE + " lb, reps back to " + cycleBaseReps
+      };
+    }
+    return {
+      weight: lastSession.weight,
+      reps: lastSession.reps + 1,
+      note: "week " + (weekNumber + 1) + " of " + WEEKS_PER_CYCLE
+    };
   }
 
   function getExerciseSessions(exercise) {
@@ -786,8 +828,21 @@
 
     var last = lastEntryFor(exName);
     var block = document.getElementById("lastTimeBlock");
+    var todaysEntryForExercise = state.entries
+      .filter(function(e) { return e.exercise === exName && e.date === todayISO(); })
+      .sort(function(a, b) { return (b.setNumber || 0) - (a.setNumber || 0); })[0] || null;
+
+    var target;
+    if (todaysEntryForExercise) {
+      target = { weight: todaysEntryForExercise.weight, reps: todaysEntryForExercise.reps, note: "same as your last set today" };
+    } else {
+      target = computeCycleSuggestion(exName);
+      if (!target && last) {
+        target = { weight: last.weight, reps: last.reps, note: "same as last time" };
+      }
+    }
+
     if (last) {
-      var target = suggestedTarget(last);
       var statusClass = last.status === "Completed" ? "status-completed" : "status-failed";
       block.innerHTML =
         '<div class="lasttime-block">' +
@@ -1010,6 +1065,13 @@
     state.entries = loadEntries();
     renderTabs();
     renderExerciseList();
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js").catch(function() {
+        // If registration fails, the app still works fine without it;
+        // it's only there to strengthen iOS storage persistence.
+      });
+    }
 
     document.getElementById("logBack").addEventListener("click", closeLogSheet);
     document.getElementById("logSetBtn").addEventListener("click", logCurrentSet);
