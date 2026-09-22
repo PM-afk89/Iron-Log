@@ -80,6 +80,11 @@
   @media (prefers-reduced-motion: reduce) {
     * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
   }
+  @keyframes restFlash {
+    0% { background: var(--accent); }
+    100% { background: var(--bg); }
+  }
+  body.rest-flash { animation: restFlash 0.5s ease-out; }
 
   .app {
     max-width: 640px;
