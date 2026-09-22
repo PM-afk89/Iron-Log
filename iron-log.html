@@ -610,6 +610,70 @@
 
   .finish-day-btn { margin-top: 16px; }
   .pr-badge { display: inline-block; margin-left: 6px; font-size: 11px; }
+
+  /* Note tags (increase/decrease weight, watch form) */
+  .tag-segmented {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .tag-btn {
+    flex: 1;
+    padding: 8px 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-dim);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+  }
+  .tag-btn.active[data-tag="up"] { background: var(--success); border-color: var(--success); color: #fff; }
+  .tag-btn.active[data-tag="down"] { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .tag-btn.active[data-tag="watch"] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+  .tag-btn.active[data-tag="none"] { background: var(--surface-2); border-color: var(--text-dim); color: var(--text); }
+
+  .tagchip {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    vertical-align: middle;
+  }
+  .tagchip.up { background: var(--success); color: #fff; }
+  .tagchip.down { background: var(--danger); color: #fff; }
+  .tagchip.watch { background: var(--accent); color: var(--accent-text); }
+
+  /* Day summary: exercise breakdown */
+  .summary-ex-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .summary-ex-row:last-child { border-bottom: none; }
+  .summary-ex-name { font-size: 15px; font-weight: 600; }
+  .summary-ex-sets { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
+  .summary-ex-vol { font-size: 13px; color: var(--text-dim); white-space: nowrap; flex-shrink: 0; padding-top: 2px; }
+
+  /* Day summary: notes & adjustments */
+  .note-block {
+    border-left: 3px solid var(--border);
+    padding: 8px 0 8px 12px;
+    margin-top: 10px;
+  }
+  .note-block.up { border-left-color: var(--success); }
+  .note-block.down { border-left-color: var(--danger); }
+  .note-block.watch { border-left-color: var(--accent); }
+  .note-ex-name { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .note-text { font-size: 14px; color: var(--text); }
+
+  .summary-actions { display: flex; gap: 8px; margin-top: 20px; }
+  .summary-actions button { flex: 1; }
 </style>
 </head>
 <body>
@@ -678,6 +742,12 @@
     <div class="field">
       <label for="exerciseNotesInput">Notes for this exercise</label>
       <textarea id="exerciseNotesInput" rows="2" placeholder="e.g. elbows in, watch the shoulder"></textarea>
+      <div class="tag-segmented" id="noteTagRow">
+        <button type="button" class="tag-btn" data-tag="none">None</button>
+        <button type="button" class="tag-btn" data-tag="up">&#8593; Increase weight</button>
+        <button type="button" class="tag-btn" data-tag="down">&#8595; Decrease weight</button>
+        <button type="button" class="tag-btn" data-tag="watch">Watch form</button>
+      </div>
     </div>
   </div>
   <div class="sheet-footer">
@@ -790,6 +860,7 @@
     currentExercise: null,
     currentGroup: null,
     currentStatus: "Completed",
+    currentNoteTag: "none",
     settings: null,
     weightLog: [],
     notes: {},
@@ -831,7 +902,14 @@
     try {
       var raw = window.localStorage.getItem(NOTES_KEY);
       var p = raw ? JSON.parse(raw) : {};
-      return (p && typeof p === "object") ? p : {};
+      if (!p || typeof p !== "object") return {};
+      var out = {};
+      Object.keys(p).forEach(function(k) {
+        var v = p[k];
+        if (typeof v === "string") out[k] = { text: v, tag: "none" };
+        else if (v && typeof v === "object") out[k] = { text: v.text || "", tag: v.tag || "none" };
+      });
+      return out;
     } catch (e) { return {}; }
   }
 
@@ -1037,6 +1115,50 @@
       if (e.date === today && exList.indexOf(e.exercise) !== -1 && prIndices[i]) prCount++;
     });
 
+    var entriesToday = state.entries.filter(function(e) {
+      return e.date === today && exList.indexOf(e.exercise) !== -1;
+    });
+    var exNamesToday = exList.filter(function(name) {
+      return entriesToday.some(function(e) { return e.exercise === name; });
+    });
+
+    var breakdownHtml = exNamesToday.map(function(name) {
+      var sets = entriesToday
+        .filter(function(e) { return e.exercise === name; })
+        .sort(function(a, b) { return (a.setNumber || 0) - (b.setNumber || 0); });
+      var vol = sets.reduce(function(s, e) { return s + (e.weight || 0) * (e.reps || 0); }, 0);
+      var isPR = sets.some(function(e) { return prIndices[state.entries.indexOf(e)]; });
+      var setsStr = sets.map(function(e) {
+        return e.weight + "\u00d7" + e.reps + (e.status === "Failed" ? " (failed)" : "");
+      }).join(", ");
+      return (
+        '<div class="summary-ex-row">' +
+          '<div>' +
+            '<div class="summary-ex-name">' + escapeHtml(name) + (isPR ? ' <span class="pr-badge">&#128293; PR</span>' : '') + '</div>' +
+            '<div class="summary-ex-sets">' + setsStr + '</div>' +
+          '</div>' +
+          '<div class="summary-ex-vol">' + Math.round(vol) + ' lb\u00b7reps</div>' +
+        '</div>'
+      );
+    }).join("");
+
+    var TAG_META = {
+      up: { cls: "up", label: "Increase weight next time" },
+      down: { cls: "down", label: "Decrease weight next time" },
+      watch: { cls: "watch", label: "Watch form" }
+    };
+    var notesHtml = exNamesToday.map(function(name) {
+      var note = state.notes[name];
+      if (!note || (!note.text && (!note.tag || note.tag === "none"))) return "";
+      var meta = TAG_META[note.tag];
+      return (
+        '<div class="note-block' + (meta ? " " + meta.cls : "") + '">' +
+          '<div class="note-ex-name">' + escapeHtml(name) + (meta ? ' <span class="tagchip ' + meta.cls + '">' + meta.label + '</span>' : '') + '</div>' +
+          (note.text ? '<div class="note-text">' + escapeHtml(note.text) + '</div>' : '') +
+        '</div>'
+      );
+    }).filter(function(html) { return html; }).join("");
+
     document.getElementById("summaryTitle").textContent = group + " Day Summary";
     document.getElementById("summaryBody").innerHTML =
       '<div class="lasttime-block">' +
@@ -1047,11 +1169,64 @@
       '</div>' +
       (prCount > 0
         ? '<div class="lasttime-block"><div class="lasttime-label">PRS TODAY</div><div class="lasttime-stats">&#128293; ' + prCount + '</div></div>'
-        : '');
+        : '') +
+      (breakdownHtml
+        ? '<div class="lasttime-label" style="margin-top:22px;">EXERCISE BREAKDOWN</div><div class="lasttime-block" style="margin-top:8px;">' + breakdownHtml + '</div>'
+        : '') +
+      (notesHtml
+        ? '<div class="lasttime-label" style="margin-top:22px;">NOTES &amp; ADJUSTMENTS</div><div class="lasttime-block" style="margin-top:8px;">' + notesHtml + '</div>'
+        : '') +
+      '<div class="summary-actions"><button class="util-btn" id="exportDayBtn">Export this session</button></div>';
+
+    var exportDayBtn = document.getElementById("exportDayBtn");
+    if (exportDayBtn) {
+      exportDayBtn.addEventListener("click", function() {
+        exportDaySummary(group, today, entriesToday, exNamesToday);
+      });
+    }
 
     var sheet = document.getElementById("summarySheet");
     sheet.classList.add("open");
     sheet.setAttribute("aria-hidden", "false");
+  }
+
+  function exportDaySummary(group, date, entriesToday, exNames) {
+    var notesForDay = {};
+    exNames.forEach(function(name) {
+      if (state.notes[name]) notesForDay[name] = state.notes[name];
+    });
+    var payload = {
+      app: "iron-log",
+      exportedAt: new Date().toISOString(),
+      date: date,
+      muscleGroup: group,
+      entries: entriesToday,
+      notes: notesForDay
+    };
+    var json = JSON.stringify(payload, null, 2);
+    var filename = "iron-log_" + date + "_" + group.toLowerCase().replace(/\s+/g, "-") + ".json";
+    var blob = new Blob([json], { type: "application/json" });
+    var shared = false;
+    try {
+      if (navigator.canShare) {
+        var file = new File([blob], filename, { type: "application/json" });
+        if (navigator.canShare({ files: [file] })) {
+          navigator.share({ files: [file], title: "Iron Log \u2014 " + group + " " + date }).catch(function() {});
+          shared = true;
+        }
+      }
+    } catch (e) { shared = false; }
+    if (!shared) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.setTimeout(function() { URL.revokeObjectURL(url); }, 2000);
+    }
+    showToast("Saved " + filename);
   }
 
   function closeDaySummary() {
@@ -1209,7 +1384,9 @@
 
     document.getElementById("setNumberInput").value = todaysSetCount(exName) + 1;
     document.getElementById("feelInput").value = "";
-    document.getElementById("exerciseNotesInput").value = state.notes[exName] || "";
+    var existingNote = state.notes[exName] || { text: "", tag: "none" };
+    document.getElementById("exerciseNotesInput").value = existingNote.text || "";
+    setNoteTag(existingNote.tag || "none");
     setStatus("Completed");
 
     var sheet = document.getElementById("logSheet");
@@ -1227,6 +1404,13 @@
     state.currentStatus = status;
     document.getElementById("statusCompleted").classList.toggle("active", status === "Completed");
     document.getElementById("statusFailed").classList.toggle("active", status === "Failed");
+  }
+
+  function setNoteTag(tag) {
+    state.currentNoteTag = tag;
+    Array.prototype.forEach.call(document.querySelectorAll("#noteTagRow .tag-btn"), function(btn) {
+      btn.classList.toggle("active", btn.getAttribute("data-tag") === tag);
+    });
   }
 
   function showToast(msg) {
@@ -1251,7 +1435,8 @@
     var exName = state.currentExercise;
     var prevBest = getBestCompleted(exName);
 
-    if (notesVal) state.notes[exName] = notesVal;
+    var noteTag = state.currentNoteTag || "none";
+    if (notesVal || noteTag !== "none") state.notes[exName] = { text: notesVal, tag: noteTag };
     else delete state.notes[exName];
     saveNotes();
 
@@ -1729,9 +1914,16 @@
     document.getElementById("exerciseNotesInput").addEventListener("blur", function() {
       if (!state.currentExercise) return;
       var val = this.value.trim();
-      if (val) state.notes[state.currentExercise] = val;
+      var tag = state.currentNoteTag || "none";
+      if (val || tag !== "none") state.notes[state.currentExercise] = { text: val, tag: tag };
       else delete state.notes[state.currentExercise];
       saveNotes();
+    });
+
+    Array.prototype.forEach.call(document.querySelectorAll("#noteTagRow .tag-btn"), function(btn) {
+      btn.addEventListener("click", function() {
+        setNoteTag(btn.getAttribute("data-tag"));
+      });
     });
 
     document.getElementById("historyBtn").addEventListener("click", openHistory);
