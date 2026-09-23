@@ -80,11 +80,6 @@
   @media (prefers-reduced-motion: reduce) {
     * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
   }
-  @keyframes restFlash {
-    0% { background: var(--accent); }
-    100% { background: var(--bg); }
-  }
-  body.rest-flash { animation: restFlash 0.5s ease-out; }
 
   .app {
     max-width: 640px;
@@ -516,10 +511,12 @@
     font-size: 15px;
   }
   .clear-all-row {
-    padding: 20px 4px 8px 4px;
+    padding: 8px 4px 20px 4px;
     display: flex;
     flex-direction: column;
     gap: 10px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
   }
   .clear-all-btn, .util-btn {
     width: 100%;
@@ -617,36 +614,42 @@
   }
 
   /* Rest timer bar */
-  .rest-timer-bar {
+  .rest-timer-full {
     position: fixed;
-    left: 0; right: 0; bottom: 0;
-    max-width: 640px;
-    margin: 0 auto;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    padding: 12px 18px calc(12px + env(safe-area-inset-bottom, 0px)) 18px;
+    inset: 0;
+    background: var(--bg);
+    z-index: 60;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    transform: translateY(120%);
-    transition: transform 0.25s ease;
-    z-index: 30;
+    justify-content: center;
+    gap: 26px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    padding: env(safe-area-inset-top, 0px) 24px env(safe-area-inset-bottom, 0px) 24px;
   }
-  .rest-timer-bar.show { transform: translateY(0); }
-  .rest-timer-label { font-size: 10px; letter-spacing: 0.08em; color: var(--text-dim); }
-  .rest-timer-clock { font-family: var(--font-display); font-size: 28px; letter-spacing: 0.5px; color: var(--accent); }
-  .rest-timer-actions { display: flex; gap: 8px; }
+  .rest-timer-full.show { opacity: 1; pointer-events: auto; }
+  .rest-timer-label { font-size: 13px; letter-spacing: 0.15em; color: var(--text-dim); text-transform: uppercase; }
+  .rest-timer-clock {
+    font-family: var(--font-display);
+    font-size: 96px;
+    line-height: 1;
+    letter-spacing: 1px;
+    color: var(--accent);
+  }
+  .rest-timer-actions { display: flex; gap: 14px; }
   .rest-timer-actions button {
     background: var(--surface-2);
     border: 1px solid var(--border);
     color: var(--text);
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-size: 13px;
+    border-radius: 8px;
+    padding: 14px 22px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
   }
+  .rest-timer-exercise { font-size: 15px; color: var(--text); text-align: center; }
 
   /* Settings: weekly split rows */
   select {
@@ -917,11 +920,10 @@
 
 <div class="toast" id="toast"></div>
 
-<div class="rest-timer-bar" id="restTimerBar">
-  <div>
-    <div class="rest-timer-label">REST</div>
-    <div class="rest-timer-clock" id="restTimerClock">01:30</div>
-  </div>
+<div class="rest-timer-full" id="restTimerBar">
+  <div class="rest-timer-label">Rest</div>
+  <div class="rest-timer-clock" id="restTimerClock">01:30</div>
+  <div class="rest-timer-exercise" id="restTimerExercise"></div>
   <div class="rest-timer-actions">
     <button id="restAdd30">+30s</button>
     <button id="restSkip">Skip</button>
@@ -937,6 +939,7 @@
   var WEIGHT_KEY = "ironlog_bodyweight_v1";
   var NOTES_KEY = "ironlog_notes_v1";
   var CUSTOM_EX_KEY = "ironlog_custom_exercises_v1";
+  var REST_KEY = "ironlog_rest_end_v1";
 
   var EXERCISES = {
     "Back": ["Weighted Pull Ups", "Close Lat Pull Downs", "Single Arm Seated Rows", "Lat Push Downs", "Face Pulls", "Lower Back Extensions"],
@@ -963,7 +966,7 @@
     weightLog: [],
     notes: {},
     customExercises: {},
-    rest: { remaining: 0, total: 0, intervalId: null }
+    rest: { endAt: null, intervalId: null }
   };
 
   function exercisesForGroup(group) {
@@ -1667,23 +1670,28 @@
   function startRestTimer(seconds) {
     stopRestTimer();
     if (state.settings.soundEnabled) ensureAudioCtx();
-    state.rest.total = seconds;
-    state.rest.remaining = seconds;
-    updateRestTimerUI();
+    state.rest.endAt = Date.now() + seconds * 1000;
+    try { window.localStorage.setItem(REST_KEY, String(state.rest.endAt)); } catch (e) {}
+    document.getElementById("restTimerExercise").textContent = state.currentExercise || "";
     document.getElementById("restTimerBar").classList.add("show");
-    state.rest.intervalId = window.setInterval(function() {
-      state.rest.remaining -= 1;
-      if (state.rest.remaining <= 0) {
-        finishRestTimer();
-      } else {
-        updateRestTimerUI();
-      }
-    }, 1000);
+    tickRestTimer();
+    state.rest.intervalId = window.setInterval(tickRestTimer, 250);
   }
 
-  function updateRestTimerUI() {
-    var m = Math.floor(Math.max(0, state.rest.remaining) / 60);
-    var s = Math.max(0, state.rest.remaining) % 60;
+  function tickRestTimer() {
+    if (!state.rest.endAt) return;
+    var remaining = Math.ceil((state.rest.endAt - Date.now()) / 1000);
+    if (remaining <= 0) {
+      finishRestTimer();
+    } else {
+      updateRestTimerUI(remaining);
+    }
+  }
+
+  function updateRestTimerUI(remaining) {
+    var r = Math.max(0, remaining);
+    var m = Math.floor(r / 60);
+    var s = r % 60;
     document.getElementById("restTimerClock").textContent = m + ":" + (s < 10 ? "0" : "") + s;
   }
 
@@ -1692,6 +1700,8 @@
       window.clearInterval(state.rest.intervalId);
       state.rest.intervalId = null;
     }
+    state.rest.endAt = null;
+    try { window.localStorage.removeItem(REST_KEY); } catch (e) {}
   }
 
   function finishRestTimer() {
@@ -1707,6 +1717,23 @@
   function skipRestTimer() {
     stopRestTimer();
     document.getElementById("restTimerBar").classList.remove("show");
+  }
+
+  function resumeRestTimerIfActive() {
+    var raw;
+    try { raw = window.localStorage.getItem(REST_KEY); } catch (e) { raw = null; }
+    if (!raw) return;
+    var endAt = parseInt(raw, 10);
+    if (!endAt) return;
+    var remaining = Math.ceil((endAt - Date.now()) / 1000);
+    if (remaining <= 0) {
+      try { window.localStorage.removeItem(REST_KEY); } catch (e) {}
+      return;
+    }
+    state.rest.endAt = endAt;
+    document.getElementById("restTimerBar").classList.add("show");
+    tickRestTimer();
+    state.rest.intervalId = window.setInterval(tickRestTimer, 250);
   }
 
   function playBeep() {
@@ -1799,13 +1826,14 @@
           '</div>';
       });
     }
-    var html = renderWeeklyTrendHtml() + listHtml +
+    var utilityHtml =
       '<div class="clear-all-row">' +
         '<button class="util-btn" id="exportBtn">Back up data</button>' +
         '<button class="util-btn" id="importBtn">Restore from backup</button>' +
         (state.entries.length ? '<button class="clear-all-btn" id="clearAllBtn">Clear all data</button>' : '') +
         '<div id="backupPanelHolder"></div>' +
       '</div>';
+    var html = utilityHtml + renderWeeklyTrendHtml() + listHtml;
     body.innerHTML = html;
 
     Array.prototype.forEach.call(body.querySelectorAll(".del-btn"), function(btn) {
@@ -1821,12 +1849,12 @@
     var clearBtn = document.getElementById("clearAllBtn");
     if (clearBtn) {
       clearBtn.addEventListener("click", function() {
-        if (window.confirm("Delete every logged set? This can't be undone.")) {
-          state.entries = [];
-          saveEntries();
-          renderHistory();
-          renderExerciseList();
-        }
+        if (!window.confirm("Delete every logged set? This can't be undone.")) return;
+        if (!window.confirm("Really sure? This permanently erases all " + state.entries.length + " logged sets.")) return;
+        state.entries = [];
+        saveEntries();
+        renderHistory();
+        renderExerciseList();
       });
     }
 
@@ -2230,6 +2258,7 @@
     renderTabs();
     renderExerciseList();
     renderTopBanner();
+    resumeRestTimerIfActive();
 
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("sw.js").catch(function() {
@@ -2323,10 +2352,16 @@
     document.getElementById("summaryBack").addEventListener("click", closeDaySummary);
 
     document.getElementById("restAdd30").addEventListener("click", function() {
-      state.rest.remaining += 30;
-      updateRestTimerUI();
+      if (!state.rest.endAt) return;
+      state.rest.endAt += 30000;
+      try { window.localStorage.setItem(REST_KEY, String(state.rest.endAt)); } catch (e) {}
+      tickRestTimer();
     });
     document.getElementById("restSkip").addEventListener("click", skipRestTimer);
+
+    document.addEventListener("visibilitychange", function() {
+      if (!document.hidden) tickRestTimer();
+    });
 
     document.getElementById("themeBtn").addEventListener("click", function() {
       var order = ["system", "dark", "light"];
