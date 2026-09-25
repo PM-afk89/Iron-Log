@@ -243,6 +243,20 @@
   }
   .ex-last .status-completed { color: var(--success); }
   .ex-last .status-failed { color: var(--danger); }
+  .finisher-head { padding: 26px 4px 6px; border-bottom: 1px solid var(--border); }
+  .finisher-title { font-family: var(--font-display); font-size: 24px; letter-spacing: 0.03em; color: var(--accent); line-height: 1; }
+  .finisher-sub { font-size: 13px; color: var(--text-dim); margin-top: 4px; }
+  .target-tag {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+  .ex-desc { font-size: 13px; color: var(--text-dim); line-height: 1.4; margin-bottom: 4px; }
   .chev { color: var(--text-dim); font-size: 20px; flex-shrink: 0; }
 
   /* Sheet overlay */
@@ -942,13 +956,108 @@
   var REST_KEY = "ironlog_rest_end_v1";
 
   var EXERCISES = {
-    "Back": ["Weighted Pull Ups", "Close Lat Pull Downs", "Single Arm Seated Rows", "Lat Push Downs", "Face Pulls", "Lower Back Extensions"],
-    "Chest": ["Flat Bench", "Incline Press", "Decline Press", "Peck Flys", "Upper Cross Press", "Pull Overs"],
-    "Legs": ["Leg Press", "Hack Squat", "Power Squat", "Single Leg Ext", "Calf Raises"],
-    "Biceps": ["Seated Single Arm Curls", "Preacher Curls Close", "Bayesian Curl", "Hammer Curls Cross", "Isometric Rotations"],
-    "Triceps": ["Rope Overhead Extensions", "Skull Crushers", "Rope Push Downs", "Cross Body Single Arm", "Weighted Dips"],
-    "Shoulders": ["Rope Overhead Press", "Rope Front Raises", "Seated Cross Body Raises", "Rope Side Raises", "Overhead Pulls", "Rear Flys", "Shrugs"]
+    "Back": ["Weighted Pull-Up", "Close-Grip Lat Pulldown", "Single-Arm Seated Cable Row", "Straight-Arm Pulldown", "Face Pull", "Back Extension"],
+    "Chest": ["Flat Bench Press", "Incline Bench Press", "Decline Bench Press", "Pec Fly", "Upper Cross Press", "Dumbbell Pullover"],
+    "Legs": ["Leg Press", "Hack Squat", "Power Squat", "Single-Leg Extension", "Calf Raise"],
+    "Biceps": ["Seated Single-Arm Dumbbell Curl", "Close-Grip Preacher Curl", "Bayesian Cable Curl", "Cross-Body Hammer Curl", "Isometric Rotations"],
+    "Triceps": ["Overhead Cable Triceps Extension", "Skull Crusher", "Rope Pushdown", "Cross-Body Cable Triceps Extension", "Weighted Dip"],
+    "Shoulders": ["Cable Overhead Press", "Seated Cable Cross-Body Lateral Raise", "Cable Lateral Raise", "Overhead Pulls", "Reverse Fly", "Shrug"]
   };
+
+  // Finishers: 2 sets each at the end of a day, so every muscle group
+  // gets hit a second time during the week. Names are deliberately
+  // different from the main lists so their history stays separate.
+  var FINISHERS = {
+    "Back": [
+      { name: "Incline Dumbbell Curl", target: "Biceps", desc: "Lie back on a 45\u00b0 bench, arms hanging behind you, and curl. Stretches the biceps long head." }
+    ],
+    "Chest": [
+      { name: "Single-Arm Overhead Dumbbell Extension", target: "Triceps", desc: "Seated or standing, one dumbbell overhead, lower it behind your head and press back up." }
+    ],
+    "Legs": [
+      { name: "Dumbbell Lateral Raise", target: "Side delts", desc: "Standing, raise dumbbells out to your sides to shoulder height. Light weight, no swinging." },
+      { name: "Bent-Over Rear Delt Fly", target: "Rear delts", desc: "Hinge forward with a flat back and sweep light dumbbells out to your sides." }
+    ],
+    "Biceps": [
+      { name: "Wide-Grip Lat Pulldown", target: "Back", desc: "Wide overhand grip, pull the bar to your upper chest, elbows driving down." }
+    ],
+    "Triceps": [
+      { name: "Machine Chest Press", target: "Chest", desc: "Seated press machine. Stable enough to push hard even with tired triceps." }
+    ],
+    "Shoulders": [
+      { name: "Seated Leg Curl", target: "Hamstrings", desc: "Machine curl, heels pulling down and back. Your leg day has no hamstring work yet." }
+    ]
+  };
+
+  // Old name -> new name. Logged sets and notes are moved over on load
+  // and on restore, so history and PRs carry across.
+  var RENAMES = {
+    "Weighted Pull Ups": "Weighted Pull-Up",
+    "Close Lat Pull Downs": "Close-Grip Lat Pulldown",
+    "Single Arm Seated Rows": "Single-Arm Seated Cable Row",
+    "Lat Push Downs": "Straight-Arm Pulldown",
+    "Face Pulls": "Face Pull",
+    "Lower Back Extensions": "Back Extension",
+    "Flat Bench": "Flat Bench Press",
+    "Incline Press": "Incline Bench Press",
+    "Decline Press": "Decline Bench Press",
+    "Peck Flys": "Pec Fly",
+    "Pull Overs": "Dumbbell Pullover",
+    "Single Leg Ext": "Single-Leg Extension",
+    "Calf Raises": "Calf Raise",
+    "Seated Single Arm Curls": "Seated Single-Arm Dumbbell Curl",
+    "Preacher Curls Close": "Close-Grip Preacher Curl",
+    "Bayesian Curl": "Bayesian Cable Curl",
+    "Hammer Curls Cross": "Cross-Body Hammer Curl",
+    "Rope Overhead Extensions": "Overhead Cable Triceps Extension",
+    "Skull Crushers": "Skull Crusher",
+    "Rope Push Downs": "Rope Pushdown",
+    "Cross Body Single Arm": "Cross-Body Cable Triceps Extension",
+    "Weighted Dips": "Weighted Dip",
+    "Rope Overhead Press": "Cable Overhead Press",
+    "Seated Cross Body Raises": "Seated Cable Cross-Body Lateral Raise",
+    "Rope Side Raises": "Cable Lateral Raise",
+    "Rear Flys": "Reverse Fly",
+    "Shrugs": "Shrug"
+  };
+
+  function migrateNames() {
+    var changedEntries = false, changedNotes = false, changedCustom = false;
+    state.entries.forEach(function(e) {
+      if (e && RENAMES[e.exercise]) { e.exercise = RENAMES[e.exercise]; changedEntries = true; }
+    });
+    Object.keys(state.notes).forEach(function(oldName) {
+      var newName = RENAMES[oldName];
+      if (!newName) return;
+      if (!state.notes[newName]) state.notes[newName] = state.notes[oldName];
+      delete state.notes[oldName];
+      changedNotes = true;
+    });
+    Object.keys(state.customExercises).forEach(function(group) {
+      var list = state.customExercises[group] || [];
+      var builtIn = (EXERCISES[group] || []).concat(finisherNames(group));
+      var next = list.filter(function(n) {
+        var target = RENAMES[n] || n;
+        return builtIn.indexOf(target) === -1;
+      });
+      if (next.length !== list.length) { state.customExercises[group] = next; changedCustom = true; }
+    });
+    if (changedEntries) saveEntries();
+    if (changedNotes) saveNotes();
+    if (changedCustom) saveCustomExercises();
+  }
+
+  function finisherNames(group) {
+    return (FINISHERS[group] || []).map(function(f) { return f.name; });
+  }
+
+  function finisherInfo(name) {
+    var found = null;
+    Object.keys(FINISHERS).forEach(function(g) {
+      FINISHERS[g].forEach(function(f) { if (f.name === name) found = f; });
+    });
+    return found;
+  }
 
   var GROUP_ORDER = ["Back", "Chest", "Legs", "Biceps", "Triceps", "Shoulders"];
 
@@ -972,7 +1081,7 @@
   function exercisesForGroup(group) {
     var base = EXERCISES[group] || [];
     var custom = state.customExercises[group] || [];
-    return base.concat(custom);
+    return base.concat(custom).concat(finisherNames(group));
   }
 
   function loadCustomExercises() {
@@ -1181,7 +1290,19 @@
     var customSet = {};
     (state.customExercises[state.activeGroup] || []).forEach(function(n) { customSet[n] = true; });
     var prIndices = computePRIndices();
+    var finisherSet = {};
+    finisherNames(state.activeGroup).forEach(function(n) { finisherSet[n] = true; });
+    var finisherHeaderShown = false;
     exercises.forEach(function(exName) {
+      if (finisherSet[exName] && !finisherHeaderShown) {
+        finisherHeaderShown = true;
+        var head = document.createElement("div");
+        head.className = "finisher-head";
+        head.innerHTML = '<div class="finisher-title">Finishers</div>' +
+          '<div class="finisher-sub">2 sets each. A second weekly hit for another muscle group.</div>';
+        listEl.appendChild(head);
+      }
+      var fin = finisherSet[exName] ? finisherInfo(exName) : null;
       var last = lastEntryFor(exName);
       var wrap = document.createElement("div");
       wrap.className = "ex-row-wrap";
@@ -1198,7 +1319,8 @@
       }
       row.innerHTML =
         '<div class="ex-main">' +
-          '<div class="ex-name">' + escapeHtml(exName) + (customSet[exName] ? ' <span class="custom-tag">Custom</span>' : '') + '</div>' +
+          '<div class="ex-name">' + escapeHtml(exName) + (customSet[exName] ? ' <span class="custom-tag">Custom</span>' : '') + (fin ? ' <span class="target-tag">' + escapeHtml(fin.target) + '</span>' : '') + '</div>' +
+          (fin ? '<div class="ex-desc">' + escapeHtml(fin.desc) + '</div>' : '') +
           '<div class="ex-last">' + lastHtml + '</div>' +
         '</div>' +
         '<div class="chev">&#8250;</div>';
@@ -1937,6 +2059,7 @@
             return;
           }
           var result = mergeImportedPayload(parsed);
+          if (result) migrateNames();
           if (result === null) {
             showToast("That doesn't look like a valid backup file");
             return;
@@ -1980,6 +2103,9 @@
     var entriesAdded = 0;
     entriesToAdd.forEach(function(e) {
       if (e && typeof e === "object" && e.exercise && e.date) {
+        // Convert old exercise names before comparing, so a backup made
+        // before the rename doesn't duplicate sets already on the phone.
+        if (RENAMES[e.exercise]) e.exercise = RENAMES[e.exercise];
         var key = JSON.stringify(e);
         if (!existingKeys[key]) {
           state.entries.push(e);
@@ -1990,9 +2116,10 @@
     });
     saveEntries();
     var notesAdded = 0;
-    Object.keys(notesToMerge).forEach(function(name) {
+    Object.keys(notesToMerge).forEach(function(rawName) {
+      var name = RENAMES[rawName] || rawName;
       if (!state.notes[name]) {
-        var n = notesToMerge[name];
+        var n = notesToMerge[rawName];
         if (typeof n === "string") state.notes[name] = { text: n, tag: "none" };
         else if (n && typeof n === "object") state.notes[name] = { text: n.text || "", tag: n.tag || "none" };
         notesAdded++;
@@ -2249,6 +2376,7 @@
     state.weightLog = loadWeightLog();
     state.notes = loadNotes();
     state.customExercises = loadCustomExercises();
+    migrateNames();
     applyTheme();
 
     var dow = new Date().getDay();
