@@ -956,12 +956,20 @@
   var REST_KEY = "ironlog_rest_end_v1";
 
   var EXERCISES = {
-    "Back": ["Weighted Pull-Up", "Close-Grip Lat Pulldown", "Single-Arm Seated Cable Row", "Straight-Arm Pulldown", "Face Pull", "Back Extension"],
-    "Chest": ["Flat Bench Press", "Incline Bench Press", "Decline Bench Press", "Pec Fly", "Upper Cross Press", "Dumbbell Pullover"],
-    "Legs": ["Leg Press", "Hack Squat", "Power Squat", "Single-Leg Extension", "Calf Raise"],
+    "Back": ["Weighted Pull-Up", "Close-Grip Lat Pulldown", "Chest-Supported Row", "Single-Arm Seated Cable Row", "Face Pull", "Back Extension"],
+    "Chest": ["Flat Bench Press", "Incline Bench Press", "Pec Fly", "Upper Cross Press", "Dumbbell Pullover"],
+    "Legs": ["Leg Press", "Romanian Deadlift", "Hack Squat", "Single-Leg Extension", "Seated Leg Curl", "Calf Raise"],
     "Biceps": ["Seated Single-Arm Dumbbell Curl", "Close-Grip Preacher Curl", "Bayesian Cable Curl", "Cross-Body Hammer Curl", "Isometric Rotations"],
-    "Triceps": ["Overhead Cable Triceps Extension", "Skull Crusher", "Rope Pushdown", "Cross-Body Cable Triceps Extension", "Weighted Dip"],
-    "Shoulders": ["Cable Overhead Press", "Seated Cable Cross-Body Lateral Raise", "Cable Lateral Raise", "Overhead Pulls", "Reverse Fly", "Shrug"]
+    "Triceps": ["Overhead Cable Triceps Extension", "Skull Crusher", "Cross-Body Cable Triceps Extension", "Weighted Dip"],
+    "Shoulders": ["Seated Dumbbell Shoulder Press", "Seated Cable Cross-Body Lateral Raise", "Cable Lateral Raise", "Overhead Pulls", "Reverse Fly", "Shrug"]
+  };
+
+  // Short how-to lines for main-list exercises that are new to the plan.
+  var BASE_DESC = {
+    "Romanian Deadlift": "Bar or dumbbells, soft knees, push your hips back until your hamstrings stretch, then stand up.",
+    "Seated Leg Curl": "Machine curl, heels pulling down and back. Seated keeps the hamstrings on more stretch than lying.",
+    "Chest-Supported Row": "Chest on the pad of a machine or T-bar, row toward your ribs and squeeze your shoulder blades together.",
+    "Seated Dumbbell Shoulder Press": "Back supported on an upright bench, press dumbbells from shoulder height to overhead."
   };
 
   // Finishers: 2 sets each at the end of a day, so every muscle group
@@ -985,7 +993,7 @@
       { name: "Machine Chest Press", target: "Chest", desc: "Seated press machine. Stable enough to push hard even with tired triceps." }
     ],
     "Shoulders": [
-      { name: "Seated Leg Curl", target: "Hamstrings", desc: "Machine curl, heels pulling down and back. Your leg day has no hamstring work yet." }
+      { name: "Lying Leg Curl", target: "Hamstrings", desc: "Face down on the machine, curl your heels toward your glutes. Keep your hips pressed into the pad." }
     ]
   };
 
@@ -1303,6 +1311,7 @@
         listEl.appendChild(head);
       }
       var fin = finisherSet[exName] ? finisherInfo(exName) : null;
+      var descText = fin ? fin.desc : (BASE_DESC[exName] || "");
       var last = lastEntryFor(exName);
       var wrap = document.createElement("div");
       wrap.className = "ex-row-wrap";
@@ -1320,7 +1329,7 @@
       row.innerHTML =
         '<div class="ex-main">' +
           '<div class="ex-name">' + escapeHtml(exName) + (customSet[exName] ? ' <span class="custom-tag">Custom</span>' : '') + (fin ? ' <span class="target-tag">' + escapeHtml(fin.target) + '</span>' : '') + '</div>' +
-          (fin ? '<div class="ex-desc">' + escapeHtml(fin.desc) + '</div>' : '') +
+          (descText ? '<div class="ex-desc">' + escapeHtml(descText) + '</div>' : '') +
           '<div class="ex-last">' + lastHtml + '</div>' +
         '</div>' +
         '<div class="chev">&#8250;</div>';
