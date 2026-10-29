@@ -22,7 +22,7 @@
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;}
   body{padding-bottom:90px;-webkit-text-size-adjust:100%;}
-  header{position:sticky;top:0;z-index:20;background:var(--bg);padding:14px 16px 8px;border-bottom:1px solid var(--border);}
+  header{position:sticky;top:0;z-index:20;background:var(--bg);padding:calc(14px + env(safe-area-inset-top)) 16px 8px;border-bottom:1px solid var(--border);}
   h1{font-size:20px;margin:0 0 10px;display:flex;align-items:center;justify-content:space-between;}
   h1 .tools{display:flex;gap:8px;}
   button.icon{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:10px;width:36px;height:36px;font-size:16px;cursor:pointer;}
