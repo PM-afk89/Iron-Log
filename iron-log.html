@@ -128,6 +128,14 @@
   </div>
 </div>
 
+<div class="modal-bg" id="swapModalBg">
+  <div class="modal">
+    <button class="close-x" id="swapClose">✕</button>
+    <h2 id="swapTitle">Swap exercise</h2>
+    <div id="swapBody"></div>
+  </div>
+</div>
+
 <div class="modal-bg" id="summaryModalBg">
   <div class="modal">
     <button class="close-x" id="summaryClose">✕</button>
@@ -143,30 +151,30 @@ const ROUTINE = {
   push: { label:"Push", categories:[
     {name:"Chest", count:2, pool:["Smith Machine Flat Bench Press","Incline Smith Machine Press","Seated Cable Pec Flye","Cable Crossovers","Cable Press-Around"]},
     {name:"Shoulders", count:2, pool:["Cable Lateral Raise","Cable Y-Raise","Behind-The-Back Cuffed Lateral Raise","Overhead Press (Smith Machine)","Reverse Cable Crossover (Rear Delt)","Rope Face-Pull, Seated/Lying (Rear Delt)"]},
-    {name:"Triceps", count:2, pool:["Overhead Cable Triceps Extension (Bar)","Skullcrusher","Triceps Pressdown (Bar)","Katana Cable Triceps Extension","Smith Machine JM Press"]}
+    {name:"Triceps", count:2, anchor:["Overhead Cable Triceps Extension (Bar)"], pool:["Skullcrusher","Triceps Pressdown (Bar)","Katana Cable Triceps Extension","Smith Machine JM Press"]}
   ]},
   pull: { label:"Pull", categories:[
-    {name:"Back", count:3, pool:["Wide-Grip Lat Pulldown","Neutral-Grip Lat Pulldown","Half-Kneeling 1-Arm Lat Pulldown","Cross-Body Lat Pull-Around","Wide-Grip Cable Row","Chest-Supported Row","Smith Machine Shrugs"]},
-    {name:"Biceps", count:3, pool:["Face-Away Bayesian Cable Curl","Incline Curl (DB)","Standard Cable Curl","Hammer Curl (DB)","Preacher Hammer Curl (DB)"]}
+    {name:"Back", count:3, pool:["Wide-Grip Lat Pulldown","Neutral-Grip Lat Pulldown","Half-Kneeling 1-Arm Lat Pulldown","Cross-Body Lat Pull-Around","Wide-Grip Cable Row","Chest-Supported Row","Close-Grip Cable Row","Smith Machine Shrugs"]},
+    {name:"Biceps", count:3, pool:["Face-Away Bayesian Cable Curl","Incline Curl (DB)","Standard Cable Curl","Hammer Curl (DB)","Preacher Hammer Curl (DB)","DB Preacher Curl"]}
   ]},
   legs: { label:"Legs", categories:[
     {name:"Quads", count:2, pool:["Smith Machine Squat","Bulgarian Split Squat (Smith)","Leg Extension","Belt Squat"]},
-    {name:"Hamstrings", count:2, pool:["Romanian Deadlift (Smith)","Lying Leg Curl","Nordic Hamstring Curl","Smith Machine Hip Thrust"]},
-    {name:"Glutes", count:2, pool:["Smith Machine Lunge, Front Foot Elevated","Cable Kickback"]}
+    {name:"Hamstrings", count:2, pool:["Romanian Deadlift (Smith)","Lying Leg Curl","Nordic Hamstring Curl"]},
+    {name:"Glutes", count:2, anchor:["Smith Machine Hip Thrust"], pool:["Smith Machine Lunge, Front Foot Elevated","Cable Kickback","Cable Pull-Through"]}
   ]},
   upper: { label:"Upper", categories:[
-    {name:"Chest", count:2, pool:["Smith Machine Flat Bench Press","Incline Smith Machine Press"]},
-    {name:"Back", count:2, pool:["Chest-Supported Row","Rope Face-Pull, Standing","Smith Machine Shrugs"]},
-    {name:"Biceps", count:2, pool:["Face-Away Bayesian Cable Curl","Incline Curl (DB)","Standard Cable Curl","Hammer Curl (DB)","Preacher Hammer Curl (DB)"]}
+    {name:"Chest", count:2, pool:["Smith Machine Flat Bench Press","Incline Smith Machine Press","Seated Cable Pec Flye","Cable Crossovers"]},
+    {name:"Back", count:2, pool:["Chest-Supported Row","Rope Face-Pull, Standing","Close-Grip Cable Row","Smith Machine Shrugs"]},
+    {name:"Biceps", count:2, pool:["Face-Away Bayesian Cable Curl","Incline Curl (DB)","Standard Cable Curl","Hammer Curl (DB)","Preacher Hammer Curl (DB)","DB Preacher Curl"]}
   ]},
   lower: { label:"Lower", categories:[
     {name:"Quads", count:2, pool:["Smith Machine Squat","Bulgarian Split Squat (Smith)","Leg Extension","Belt Squat"]},
-    {name:"Hamstrings", count:2, pool:["Romanian Deadlift (Smith)","Lying Leg Curl","Nordic Hamstring Curl","Smith Machine Hip Thrust"]},
-    {name:"Glutes", count:2, pool:["Smith Machine Lunge, Front Foot Elevated","Cable Kickback"]}
+    {name:"Hamstrings", count:2, pool:["Romanian Deadlift (Smith)","Lying Leg Curl","Nordic Hamstring Curl"]},
+    {name:"Glutes", count:2, anchor:["Smith Machine Hip Thrust"], pool:["Smith Machine Lunge, Front Foot Elevated","Cable Kickback","Cable Pull-Through"]}
   ]},
   arms: { label:"Arms+Delts", categories:[
-    {name:"Biceps", count:2, pool:["Face-Away Bayesian Cable Curl","Incline Curl (DB)","Standard Cable Curl","Hammer Curl (DB)","Preacher Hammer Curl (DB)","Machine Preacher Curl"]},
-    {name:"Triceps", count:2, pool:["Overhead Cable Triceps Extension (Bar)","Skullcrusher","Triceps Pressdown (Bar)","Katana Cable Triceps Extension","Smith Machine JM Press","Triceps Pressdown (Rope)"]},
+    {name:"Biceps", count:2, pool:["Face-Away Bayesian Cable Curl","Incline Curl (DB)","Standard Cable Curl","Hammer Curl (DB)","Preacher Hammer Curl (DB)","DB Preacher Curl","Machine Preacher Curl"]},
+    {name:"Triceps", count:2, anchor:["Katana Cable Triceps Extension"], pool:["Overhead Cable Triceps Extension (Bar)","Skullcrusher","Triceps Pressdown (Bar)","Smith Machine JM Press","Triceps Pressdown (Rope)"]},
     {name:"Delts", count:2, pool:["Cable Lateral Raise","Cable Y-Raise","Behind-The-Back Cuffed Lateral Raise","Overhead Press (Smith Machine)","Reverse Cable Crossover (Rear Delt)","Rope Face-Pull, Seated/Lying (Rear Delt)"]}
   ]}
 };
@@ -184,6 +192,7 @@ const K_SETTINGS = "ironlog_settings_v2";
 const K_BW = "ironlog_bodyweight_v1";
 const K_NOTES = "ironlog_notes_v1";
 const K_ROTATION = "ironlog_rotation_v1";
+const K_SWAPS = "ironlog_swaps_v1";
 
 function load(key, fallback){
   try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
@@ -198,6 +207,7 @@ let settings = load(K_SETTINGS, { restSec:90, theme:"dark" });
 let bw = load(K_BW, []);               // [{date, weight}]
 let notes = load(K_NOTES, {});         // { exerciseName: "text" }
 let rotation = load(K_ROTATION, {});   // { "day|category": nextIndex }
+let swaps = load(K_SWAPS, {});         // { day: { slotIndex: exerciseName } } cleared on Finish Day
 
 let currentDay = DAY_ORDER[0];
 let sessionDone = {}; // transient: { exerciseName: [bool,bool,bool] }
@@ -207,22 +217,33 @@ function getExercisesForDay(dayKey){
   const day = ROUTINE[dayKey];
   let list = [];
   day.categories.forEach(cat => {
+    const anchors = cat.anchor || [];
+    anchors.forEach(a => list.push({ name: a, cat: cat.name }));
+    const slots = cat.count - anchors.length;
     const key = dayKey + "|" + cat.name;
-    let idx = rotation[key] || 0;
-    const pool = cat.pool;
-    for(let i=0;i<cat.count;i++){
-      const ex = pool[(idx+i) % pool.length];
-      list.push({ name: ex, cat: cat.name });
+    const idx = rotation[key] || 0;
+    for(let i=0;i<slots;i++){
+      list.push({ name: cat.pool[(idx+i) % cat.pool.length], cat: cat.name });
     }
   });
+  const ov = swaps[dayKey] || {};
+  list.forEach((ex,i)=>{
+    ex.idx = i; ex.scheduled = ex.name;
+    if(ov[i]){ ex.name = ov[i]; ex.swapped = true; }
+  });
   return list;
+}
+function categoryOptions(dayKey, catName){
+  const cat = ROUTINE[dayKey].categories.find(c=>c.name===catName);
+  return [...(cat.anchor||[]), ...cat.pool];
 }
 function advanceRotation(dayKey){
   const day = ROUTINE[dayKey];
   day.categories.forEach(cat => {
+    const slots = cat.count - (cat.anchor ? cat.anchor.length : 0);
     const key = dayKey + "|" + cat.name;
-    let idx = rotation[key] || 0;
-    rotation[key] = (idx + cat.count) % cat.pool.length;
+    const idx = rotation[key] || 0;
+    rotation[key] = (idx + slots) % cat.pool.length;
   });
   save(K_ROTATION, rotation);
 }
@@ -254,7 +275,7 @@ function renderDay(){
   const main = document.getElementById("main");
   main.innerHTML = "";
   const list = getExercisesForDay(currentDay);
-  list.forEach(ex=>{
+  list.forEach((ex,idx)=>{
     if(!sessionDone[ex.name]) sessionDone[ex.name] = new Array(SETS_PER_EX).fill(false);
     const e = entries[ex.name] || {};
     const card = document.createElement("div");
@@ -263,7 +284,7 @@ function renderDay(){
     card.innerHTML = `
       <div class="ex-head">
         <div>
-          <div class="ex-cat">${ex.cat}</div>
+          <div class="ex-cat">${ex.cat}${ex.swapped ? " · swapped" : ""}</div>
           <div class="ex-name">${ex.name}</div>
         </div>
         ${e.allTimeBest ? `<div class="pr-badge">PR ${e.allTimeBest} lb</div>` : ``}
@@ -272,6 +293,7 @@ function renderDay(){
       <div id="sets-${cssSafe(ex.name)}"></div>
       <div class="ex-footer">
         <button class="notes-toggle" data-ex="${esc(ex.name)}">📝 ${notes[ex.name] ? "Edit note" : "Add note"}</button>
+        <button class="notes-toggle swap-toggle" data-idx="${idx}">⇄ Swap</button>
         ${VIDEOS[ex.name] ? `<button class="notes-toggle demo-toggle" data-ex="${esc(ex.name)}">▶ Demo</button>` : ``}
       </div>
       <div id="demowrap-${cssSafe(ex.name)}"></div>
@@ -279,6 +301,10 @@ function renderDay(){
     `;
     main.appendChild(card);
     renderSets(ex);
+  });
+
+  main.querySelectorAll(".swap-toggle").forEach(btn=>{
+    btn.onclick = ()=> openSwap(parseInt(btn.getAttribute("data-idx")));
   });
 
   main.querySelectorAll(".demo-toggle").forEach(btn=>{
@@ -298,7 +324,7 @@ function renderDay(){
     };
   });
 
-  const notesToggles = main.querySelectorAll(".notes-toggle:not(.demo-toggle)");
+  const notesToggles = main.querySelectorAll(".notes-toggle:not(.demo-toggle):not(.swap-toggle)");
   notesToggles.forEach(btn=>{
     btn.onclick = ()=>{
       const name = btn.getAttribute("data-ex");
@@ -343,6 +369,52 @@ function renderSets(ex){
   }
 }
 
+/* ---------------- SWAP ---------------- */
+function snapshotInputs(){
+  const vals = {}, done = {};
+  document.querySelectorAll("#main input").forEach(i=>{ if(i.id) vals[i.id] = i.value; });
+  document.querySelectorAll("#main .set-check.done").forEach(b=>{ done[b.id] = true; });
+  return { vals, done };
+}
+function restoreInputs(snap){
+  Object.keys(snap.vals).forEach(id=>{ const el = document.getElementById(id); if(el) el.value = snap.vals[id]; });
+  Object.keys(snap.done).forEach(id=>{ const el = document.getElementById(id); if(el) el.classList.add("done"); });
+}
+function applySwap(idx, name){
+  const snap = snapshotInputs();
+  if(!swaps[currentDay]) swaps[currentDay] = {};
+  if(name === null) delete swaps[currentDay][idx]; else swaps[currentDay][idx] = name;
+  save(K_SWAPS, swaps);
+  renderDay();
+  // inputs for the swapped slot start fresh; everything else is restored
+  const list = getExercisesForDay(currentDay);
+  const swappedKey = cssSafe(list[idx].name);
+  Object.keys(snap.vals).forEach(id=>{ if(id.includes("-"+swappedKey+"-")) delete snap.vals[id]; });
+  Object.keys(snap.done).forEach(id=>{ if(id.includes("-"+swappedKey+"-")) delete snap.done[id]; });
+  restoreInputs(snap);
+  closeSwap();
+}
+function openSwap(idx){
+  const list = getExercisesForDay(currentDay);
+  const ex = list[idx];
+  const inUse = new Set(list.map(e=>e.name));
+  const options = categoryOptions(currentDay, ex.cat).filter(n => !inUse.has(n));
+  const body = document.getElementById("swapBody");
+  document.getElementById("swapTitle").textContent = "Swap " + ex.cat + " exercise";
+  let html = `<div style="font-size:13px;color:var(--sub);margin-bottom:10px;">Replacing <b style="color:var(--text)">${ex.name}</b> for today only.</div>`;
+  if(ex.swapped) html += `<button class="small-btn" data-reset="1" style="width:100%;margin-bottom:8px;">↩ Back to scheduled: ${ex.scheduled}</button>`;
+  if(options.length === 0) html += `<div class="empty">No other exercises in this category.</div>`;
+  options.forEach(n=>{
+    html += `<button class="small-btn" data-name="${esc(n)}" style="width:100%;margin-bottom:8px;text-align:left;">${n}</button>`;
+  });
+  body.innerHTML = html;
+  body.querySelectorAll("button[data-name]").forEach(b=>{ b.onclick = ()=> applySwap(idx, b.getAttribute("data-name")); });
+  const r = body.querySelector("button[data-reset]");
+  if(r) r.onclick = ()=> applySwap(idx, null);
+  document.getElementById("swapModalBg").classList.add("show");
+}
+function closeSwap(){ document.getElementById("swapModalBg").classList.remove("show"); }
+
 /* ---------------- REST TIMER ---------------- */
 let timerInterval = null;
 function startRestTimer(){
@@ -364,6 +436,7 @@ function startRestTimer(){
   },1000);
 }
 document.getElementById("restBtn").onclick = startRestTimer;
+document.getElementById("swapClose").onclick = closeSwap;
 document.getElementById("timerCancel").onclick = ()=>{
   clearInterval(timerInterval);
   document.getElementById("timerOverlay").classList.remove("show");
@@ -400,7 +473,7 @@ document.getElementById("finishBtn").onclick = ()=>{
     lines.push(`${ex.name}: ${topWeight} lb × ${reps.join("/")}${isPR ? " 🏆 PR" : ""}`);
   });
   save(K_ENTRIES, entries);
-  if(exCount > 0) advanceRotation(currentDay);
+  if(exCount > 0){ advanceRotation(currentDay); delete swaps[currentDay]; save(K_SWAPS, swaps); }
 
   document.getElementById("summaryTitle").textContent = `${ROUTINE[currentDay].label} Day Complete`;
   document.getElementById("summaryBody").innerHTML = `
