@@ -179,10 +179,6 @@ const ROUTINE = {
   ]}
 };
 const DAY_ORDER = ["push","pull","legs","upper","lower","arms"];
-/* Demo clips: exercise name -> YouTube video id + start/end seconds */
-const VIDEOS = {
-  "Face-Away Bayesian Cable Curl": { id:"GNO4OtYoCYk", start:628, end:638 }
-};
 const SETS_PER_EX = 3;
 const REP_LOW = 8, REP_HIGH = 12;
 
@@ -294,9 +290,7 @@ function renderDay(){
       <div class="ex-footer">
         <button class="notes-toggle" data-ex="${esc(ex.name)}">📝 ${notes[ex.name] ? "Edit note" : "Add note"}</button>
         <button class="notes-toggle swap-toggle" data-idx="${idx}">⇄ Swap</button>
-        ${VIDEOS[ex.name] ? `<button class="notes-toggle demo-toggle" data-ex="${esc(ex.name)}">▶ Demo</button>` : ``}
       </div>
-      <div id="demowrap-${cssSafe(ex.name)}"></div>
       <div id="notewrap-${cssSafe(ex.name)}"></div>
     `;
     main.appendChild(card);
@@ -307,24 +301,7 @@ function renderDay(){
     btn.onclick = ()=> openSwap(parseInt(btn.getAttribute("data-idx")));
   });
 
-  main.querySelectorAll(".demo-toggle").forEach(btn=>{
-    btn.onclick = ()=>{
-      const name = btn.getAttribute("data-ex");
-      const v = VIDEOS[name];
-      const wrap = document.getElementById("demowrap-"+cssSafe(name));
-      if(wrap.innerHTML){ wrap.innerHTML = ""; btn.textContent = "▶ Demo"; return; }
-      const src = `https://www.youtube.com/embed/${v.id}?start=${v.start}&end=${v.end}&playsinline=1&rel=0&modestbranding=1`;
-      wrap.innerHTML = `
-        <div style="position:relative;padding-top:56.25%;margin-top:10px;border-radius:10px;overflow:hidden;background:#000;">
-          <iframe src="${src}" style="position:absolute;inset:0;width:100%;height:100%;border:0;"
-            allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
-        </div>
-        <div style="font-size:12px;margin-top:6px;"><a class="link" target="_blank" rel="noopener" href="https://youtu.be/${v.id}?t=${v.start}">Video won't play? Open in YouTube</a></div>`;
-      btn.textContent = "✕ Close demo";
-    };
-  });
-
-  const notesToggles = main.querySelectorAll(".notes-toggle:not(.demo-toggle):not(.swap-toggle)");
+  const notesToggles = main.querySelectorAll(".notes-toggle:not(.swap-toggle)");
   notesToggles.forEach(btn=>{
     btn.onclick = ()=>{
       const name = btn.getAttribute("data-ex");
@@ -582,6 +559,7 @@ function showToast(msg){
 applyTheme();
 renderTabs();
 renderDay();
+try{ indexedDB.deleteDatabase("ironlog_media"); }catch(e){}
 
 if("serviceWorker" in navigator){
   window.addEventListener("load", ()=>{
