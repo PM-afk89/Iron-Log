@@ -55,13 +55,14 @@
   .timer-overlay button{margin-top:20px;padding:12px 28px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:15px;font-weight:700;}
   .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;z-index:40;}
   .modal-bg.show{display:flex;}
-  .modal{background:var(--panel);border-radius:18px 18px 0 0;padding:20px;width:100%;max-width:640px;max-height:85vh;overflow-y:auto;}
-  .modal h2{margin-top:0;font-size:18px;}
+  .modal{background:var(--panel);border-radius:18px 18px 0 0;padding:0;width:100%;max-width:640px;max-height:85vh;max-height:85dvh;position:relative;overflow:hidden;display:flex;flex-direction:column;}
+  .modal-scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 20px calc(28px + env(safe-area-inset-bottom));}
+  .modal h2{margin-top:0;font-size:18px;padding-right:50px;}
   .row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
   .row:last-child{border-bottom:none;}
   .row label{font-size:14px;}
   .row input[type=number]{width:70px;padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--panel2);color:var(--text);text-align:center;}
-  .close-x{float:right;background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:8px;width:30px;height:30px;cursor:pointer;}
+  .close-x{position:absolute;top:10px;right:10px;z-index:5;background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:10px;width:40px;height:40px;font-size:16px;cursor:pointer;}
   .small-btn{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;}
   .section-title{font-size:13px;text-transform:uppercase;color:var(--sub);letter-spacing:.05em;margin:18px 0 8px;}
   .empty{color:var(--sub);font-size:13px;text-align:center;padding:30px 0;}
@@ -142,6 +143,7 @@
     <div style="font-size:13px;color:var(--sub);margin-bottom:8px;">Adds an extra exercise to today only. Type a name, or pick from the list.</div>
     <input type="text" id="addSearch" placeholder="Search or type a new exercise" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:15px;margin-bottom:10px;">
     <div id="addList"></div>
+    <button class="small-btn" id="addCancel" style="width:100%;margin-top:4px;">Cancel</button>
   </div>
 </div>
 
@@ -508,6 +510,7 @@ function openAdd(){
   document.getElementById("addModalBg").classList.add("show");
 }
 document.getElementById("addClose").onclick = ()=> document.getElementById("addModalBg").classList.remove("show");
+document.getElementById("addCancel").onclick = ()=> document.getElementById("addModalBg").classList.remove("show");
 
 /* ---------------- SWAP ---------------- */
 function snapshotInputs(){
@@ -548,7 +551,9 @@ function openSwap(idx){
   options.forEach(n=>{
     html += `<button class="small-btn" data-name="${esc(n)}" style="width:100%;margin-bottom:8px;text-align:left;">${n}</button>`;
   });
+  html += `<button class="small-btn" id="swapCancel" style="width:100%;margin-top:4px;">Cancel</button>`;
   body.innerHTML = html;
+  document.getElementById("swapCancel").onclick = closeSwap;
   body.querySelectorAll("button[data-name]").forEach(b=>{ b.onclick = ()=> applySwap(idx, b.getAttribute("data-name")); });
   document.getElementById("swapCustomBtn").onclick = ()=>{
     const n = cleanName(document.getElementById("swapCustom").value);
@@ -561,6 +566,7 @@ function openSwap(idx){
   document.getElementById("swapModalBg").classList.add("show");
 }
 function closeSwap(){ document.getElementById("swapModalBg").classList.remove("show"); }
+document.getElementById("swapClose").onclick = closeSwap;
 
 /* ---------------- REST TIMER (bar, timestamp-based) ---------------- */
 let restEnd = 0, restTick = null, audioCtx = null;
@@ -803,6 +809,21 @@ function showToast(msg){
 }
 
 /* ---------------- INIT ---------------- */
+/* modals: keep the ✕ pinned (outside the scrolling area) and let a tap outside the sheet close it */
+document.querySelectorAll(".modal").forEach(m=>{
+  const sc = document.createElement("div");
+  sc.className = "modal-scroll";
+  Array.from(m.children).filter(c=>!c.classList.contains("close-x")).forEach(c=>sc.appendChild(c));
+  m.appendChild(sc);
+});
+document.querySelectorAll(".modal-bg").forEach(bg=>{
+  bg.addEventListener("click", (e)=>{
+    if(e.target !== bg) return;
+    const x = bg.querySelector(".close-x");
+    if(x) x.click();
+  });
+});
+
 applyTheme();
 renderTabs();
 renderDay();
