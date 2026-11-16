@@ -450,7 +450,7 @@ function renderDay(){
   });
 }
 
-function isCableEx(n){ return /cable|pulldown|pressdown|pull-through|katana|crossover|face pull/i.test(n); }
+function isCableEx(n){ return !/smith|\(DB\)|\bDB\b|dumbbell|barbell|nordic|lying leg curl|leg extension|leg curl|squat|bench|push-up|pull-up|dip\b|\bRDL\b|romanian|chest-supported|machine preacher|skullcrusher/i.test(n); }
 function fmtLb(x){ return (Math.round(x*10)/10).toString(); }
 function updateHandle(name){
   const el = document.getElementById("hw-"+cssSafe(name));
