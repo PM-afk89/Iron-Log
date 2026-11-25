@@ -183,8 +183,8 @@ const ROUTINE = {
     {name:"Biceps", count:3, pool:["Face-Away Bayesian Cable Curl","Incline Curl (DB)","Standard Cable Curl","Hammer Curl (DB)","Preacher Hammer Curl (DB)","DB Preacher Curl"]}
   ]},
   legs: { label:"Legs", categories:[
-    {name:"Quads", count:2, pool:["Smith Machine Squat","Bulgarian Split Squat (Smith)","Leg Extension","Belt Squat"]},
-    {name:"Hamstrings", count:2, pool:["Romanian Deadlift (Smith)","Lying Leg Curl","Nordic Hamstring Curl"]},
+    {name:"Quads", count:2, pool:["Smith Machine Squat","Bulgarian Split Squat (Smith)","Single Leg Extension","Belt Squat"]},
+    {name:"Hamstrings", count:2, pool:["Romanian Deadlift (Smith)","Single Lying Leg Curl","Nordic Hamstring Curl"]},
     {name:"Glutes", count:2, anchor:["Smith Machine Hip Thrust"], pool:["Smith Machine Lunge, Front Foot Elevated","Cable Glute Kickback (Straight)","Cable Kickback, External Rotation (Glute Med)","Cable Lateral Kick (Glute Med)","Cable Pull-Through"]}
   ]},
   upper: { label:"Upper", categories:[
@@ -193,8 +193,8 @@ const ROUTINE = {
     {name:"Biceps", count:2, pool:["Face-Away Bayesian Cable Curl","Incline Curl (DB)","Standard Cable Curl","Hammer Curl (DB)","Preacher Hammer Curl (DB)","DB Preacher Curl"]}
   ]},
   lower: { label:"Lower", categories:[
-    {name:"Quads", count:2, pool:["Smith Machine Squat","Bulgarian Split Squat (Smith)","Leg Extension","Belt Squat"]},
-    {name:"Hamstrings", count:2, pool:["Romanian Deadlift (Smith)","Lying Leg Curl","Nordic Hamstring Curl"]},
+    {name:"Quads", count:2, pool:["Smith Machine Squat","Bulgarian Split Squat (Smith)","Single Leg Extension","Belt Squat"]},
+    {name:"Hamstrings", count:2, pool:["Romanian Deadlift (Smith)","Single Lying Leg Curl","Nordic Hamstring Curl"]},
     {name:"Glutes", count:2, anchor:["Smith Machine Hip Thrust"], pool:["Smith Machine Lunge, Front Foot Elevated","Cable Glute Kickback (Straight)","Cable Kickback, External Rotation (Glute Med)","Cable Lateral Kick (Glute Med)","Cable Pull-Through"]}
   ]},
   arms: { label:"Arms+Delts", categories:[
@@ -243,10 +243,10 @@ const CUES = {
  "Machine Preacher Curl": "Elbows locked on the pad, full stretch at the bottom, smooth controlled curl.",
  "Smith Machine Squat": "Push your quads close to failure without the fear of falling over. Feet can sit slightly forward. Squat deep.",
  "Bulgarian Split Squat (Smith)": "Huge quad stretch, one leg at a time. Brutal, so two hard sets per leg is plenty.",
- "Leg Extension": "Hips are fixed so the rectus femoris both stretches and contracts, working all four heads. Ease off if your knees complain.",
+ "Single Leg Extension": "One leg at a time, so your stronger leg can't take over. Hips stay down, squeeze at the top, and lower slowly. Ease off if your knees complain.",
  "Belt Squat": "The load hangs from your hips so there's no spinal loading. Stay upright, go deep, drive through the whole foot.",
  "Romanian Deadlift (Smith)": "Hinge at the hips with soft knees and the bar close to your legs. Lower until you feel the hamstring stretch, then drive your hips forward.",
- "Lying Leg Curl": "Hips down, curl through the full range, and control the lowering.",
+ "Single Lying Leg Curl": "One leg at a time. Hips stay down, curl through the full range, and control the lowering. Do the same reps on each leg.",
  "Nordic Hamstring Curl": "Anchor your ankles, keep your hips extended, lower as slowly as you can, catch yourself with your hands and push back up.",
  "Smith Machine Hip Thrust": "His top pick for the middle glutes. Pad the bar so it doesn't pinch your hips, drive up to full hip extension, and add weight or reps weekly.",
  "Smith Machine Lunge, Front Foot Elevated": "A small box under the front foot adds range at the bottom. Take a long stride and lean slightly forward for more glute stretch.",
@@ -286,7 +286,21 @@ let rotation = load(K_ROTATION, {});   // { "day|category": nextIndex }
 let extras = load(K_EXTRAS, {});       // { day: [exerciseName] } added for today, cleared on Finish Day
 let ratio = load(K_RATIO, {});          // { exerciseName: 2 } cables set to 2:1
 let customEx = load(K_CUSTOM, []);     // exercise names you typed in yourself, remembered
-let swaps = load(K_SWAPS, {});         // { day: { slotIndex: exerciseName } } cleared on Finish Day
+let swaps = load(K_SWAPS, {});
+(function migrateNames(){
+  const MAP = { "Leg Extension": "Single Leg Extension", "Lying Leg Curl": "Single Lying Leg Curl" };
+  let changed = false;
+  Object.keys(MAP).forEach(o=>{
+    const n = MAP[o];
+    [[entries, K_ENTRIES], [notes, K_NOTES], [ratio, K_RATIO]].forEach(([obj, key])=>{
+      if(obj[o] !== undefined){ if(obj[n] === undefined) obj[n] = obj[o]; delete obj[o]; save(key, obj); changed = true; }
+    });
+    Object.keys(swaps).forEach(d=>Object.keys(swaps[d]).forEach(i=>{ if(swaps[d][i] === o){ swaps[d][i] = n; changed = true; } }));
+    Object.keys(extras).forEach(d=>{ extras[d] = extras[d].map(x => x === o ? n : x); });
+    customEx = customEx.map(x => x === o ? n : x);
+  });
+  if(changed){ save(K_SWAPS, swaps); save(K_EXTRAS, extras); save(K_CUSTOM, customEx); }
+})();         // { day: { slotIndex: exerciseName } } cleared on Finish Day
 
 function nextDayAfter(d){
   const i = DAY_ORDER.indexOf(d);
