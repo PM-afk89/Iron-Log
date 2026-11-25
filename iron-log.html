@@ -133,6 +133,7 @@
     <div style="font-size:12px;color:var(--sub);margin:8px 0 4px;">Plates you own (weight x count, comma separated)</div>
     <input type="text" id="platesInput" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:14px;">
     <div class="section-title">Backup</div>
+    <button class="small-btn" id="manageDataBtn" style="width:100%;margin-bottom:8px;">🗂 Manage logged data (search / delete)</button>
     <button class="small-btn" id="exportBtn" style="width:100%;margin-bottom:8px;">Export Backup (JSON)</button>
     <label class="small-btn" style="width:100%;display:block;text-align:center;">Import Backup
       <input type="file" id="importFile" accept=".json" style="display:none;">
@@ -158,6 +159,16 @@
     <button class="close-x" id="swapClose">✕</button>
     <h2 id="swapTitle">Swap exercise</h2>
     <div id="swapBody"></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="dataModalBg" style="z-index:60;">
+  <div class="modal">
+    <button class="close-x" id="dataClose">✕</button>
+    <h2>Logged data</h2>
+    <div style="font-size:12px;color:var(--sub);margin-bottom:8px;">Search an exercise, tap it, then 🗑 any session you logged by mistake.</div>
+    <input type="text" id="dataSearch" placeholder="Search exercises…" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:16px;margin-bottom:10px;">
+    <div id="dataList"></div>
   </div>
 </div>
 
@@ -971,6 +982,84 @@ function showToast(msg){
   t.classList.add("show");
   setTimeout(()=>t.classList.remove("show"), 1800);
 }
+
+/* ---------------- MANAGE LOGGED DATA ---------------- */
+let dataOpen = null;
+function dateShort(iso){ try{ return new Date(iso).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}); }catch(e){ return ""; } }
+function histLine(h){
+  const r = (h.reps||[]).join("/");
+  const w = (h.weights && h.weights.length && new Set(h.weights).size>1) ? h.weights.map(fmtLb).join("/") : fmtLb(h.weight);
+  return `${w} lb × ${r}`;
+}
+function recomputeEntry(name){
+  const e = entries[name]; if(!e) return;
+  const hist = e.history || [];
+  if(!hist.length){ delete entries[name]; return; }
+  const last = hist[hist.length-1];
+  e.lastWeight = last.weight; e.lastReps = last.reps;
+  e.lastWeights = last.weights || (last.reps||[]).map(()=>last.weight);
+  e.allTimeBest = Math.max(...hist.map(h=>h.weight||0));
+  if(SHOW_E1RM && isCompound(name)){
+    const b = Math.max(0, ...hist.map(h=>bestE1(h.weights || (h.reps||[]).map(()=>h.weight), h.reps)));
+    e.bestE1RM = b || undefined;
+  }
+}
+function renderDataList(){
+  const q = document.getElementById("dataSearch").value.trim().toLowerCase();
+  const names = Object.keys(entries).filter(n=>n.toLowerCase().includes(q))
+    .sort((a,b)=>{
+      const la = (entries[a].history||[]).slice(-1)[0], lb = (entries[b].history||[]).slice(-1)[0];
+      return ((lb&&lb.date)||"").localeCompare((la&&la.date)||"");
+    });
+  const box = document.getElementById("dataList");
+  if(!names.length){ box.innerHTML = `<div style="color:var(--sub);font-size:14px;padding:12px 0;">${Object.keys(entries).length ? "No matching exercises." : "Nothing logged yet."}</div>`; return; }
+  box.innerHTML = names.map(n=>{
+    const hist = entries[n].history || [];
+    const open = dataOpen === n;
+    let inner = "";
+    if(open){
+      inner = hist.map((h,i)=>({h,i})).reverse().map(({h,i})=>`
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border);">
+          <div style="flex:1;font-size:13px;"><span style="color:var(--sub);">${dateShort(h.date)}</span><br>${histLine(h)}</div>
+          <button class="small-btn" data-delsess="${i}" aria-label="Delete this session">🗑</button>
+        </div>`).join("") + `
+        <button class="small-btn" data-delall="1" style="width:100%;margin-top:8px;color:var(--accent);">Delete ALL data for this exercise</button>`;
+    }
+    return `<div class="data-row" data-name="${esc(n)}" style="border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--panel2);">
+      <div data-toggle="1" style="display:flex;justify-content:space-between;gap:8px;cursor:pointer;">
+        <b style="font-size:14px;">${n}</b><span style="color:var(--sub);font-size:12px;white-space:nowrap;">${hist.length} session${hist.length===1?"":"s"} ${open?"▲":"▼"}</span>
+      </div>${inner}</div>`;
+  }).join("");
+}
+document.getElementById("dataList").addEventListener("click", ev=>{
+  const row = ev.target.closest(".data-row"); if(!row) return;
+  const name = row.dataset.name;
+  const del = ev.target.closest("[data-delsess]");
+  const all = ev.target.closest("[data-delall]");
+  if(del){
+    const i = +del.dataset.delsess, h = entries[name].history[i];
+    if(!confirm(`Delete ${name} — ${dateShort(h.date)} (${histLine(h)})?`)) return;
+    entries[name].history.splice(i,1);
+    recomputeEntry(name);
+    if(!entries[name]) dataOpen = null;
+    save(K_ENTRIES, entries); renderDataList(); showToast("Deleted"); return;
+  }
+  if(all){
+    if(!confirm(`Delete ALL logged data for ${name}? This can't be undone.`)) return;
+    delete entries[name]; dataOpen = null;
+    save(K_ENTRIES, entries); renderDataList(); showToast("Deleted"); return;
+  }
+  if(ev.target.closest("[data-toggle]")){ dataOpen = (dataOpen === name) ? null : name; renderDataList(); }
+});
+document.getElementById("dataSearch").oninput = renderDataList;
+document.getElementById("manageDataBtn").onclick = ()=>{
+  dataOpen = null; document.getElementById("dataSearch").value = "";
+  renderDataList(); document.getElementById("dataModalBg").classList.add("show");
+};
+document.getElementById("dataClose").onclick = ()=>{
+  document.getElementById("dataModalBg").classList.remove("show");
+  renderDay(); refreshLines();
+};
 
 /* ---------------- INIT ---------------- */
 /* modals: keep the ✕ pinned (outside the scrolling area) and let a tap outside the sheet close it */
