@@ -43,6 +43,8 @@
   .set-check.done{background:var(--good);color:#06240f;border-color:var(--good);}
   .ex-footer{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;color:var(--sub);}
   .handle-wt{font-size:12px;color:var(--sub);margin-top:2px;}
+  .plate-line{font-size:12px;color:var(--sub);margin-top:2px;}
+  .e1rm{font-size:12px;color:var(--sub);margin-top:4px;}
   .prog-hint{font-size:12px;color:var(--accent2);margin-top:4px;}
   .notes-toggle{background:none;border:none;color:var(--sub);font-size:12px;text-decoration:underline;cursor:pointer;padding:0;}
   textarea.notes{width:100%;margin-top:8px;min-height:50px;background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px;font-size:13px;resize:vertical;}
@@ -127,6 +129,9 @@
     <h2>Settings</h2>
     <div class="row"><label>Rest timer (sec)</label><input type="number" id="restSecInput"></div>
     <div class="row"><label>Keep screen awake</label><input type="checkbox" id="awakeInput" style="width:22px;height:22px;"></div>
+    <div class="row"><label>Smith bar weight (lb)</label><input type="number" id="barInput" step="0.5"></div>
+    <div style="font-size:12px;color:var(--sub);margin:8px 0 4px;">Plates you own (weight x count, comma separated)</div>
+    <input type="text" id="platesInput" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:14px;">
     <div class="section-title">Backup</div>
     <button class="small-btn" id="exportBtn" style="width:100%;margin-bottom:8px;">Export Backup (JSON)</button>
     <label class="small-btn" style="width:100%;display:block;text-align:center;">Import Backup
@@ -380,7 +385,9 @@ function renderDay(){
         ${e.allTimeBest ? `<div class="pr-badge">PR ${e.allTimeBest} lb</div>` : ``}
       </div>
       <div class="prog-hint">${progressionHint(ex)}</div>
+      ${e1Html(ex.name)}
       <div class="handle-wt" id="hw-${cssSafe(ex.name)}"></div>
+      <div class="plate-line" id="pl-${cssSafe(ex.name)}" data-ex="${esc(ex.name)}"></div>
       <div id="sets-${cssSafe(ex.name)}"></div>
       <div class="ex-footer">
         <button class="notes-toggle" data-ex="${esc(ex.name)}">📝 ${notes[ex.name] ? "Edit note" : "Add note"}</button>
@@ -412,6 +419,7 @@ function renderDay(){
     };
   });
   list.forEach(ex=>updateHandle(ex.name));
+  list.forEach(ex=>updatePlates(ex.name));
 
   main.querySelectorAll(".cue-toggle").forEach(btn=>{
     btn.onclick = ()=>{
@@ -465,6 +473,102 @@ document.getElementById("main").addEventListener("input", (ev)=>{
   if(!m) return;
   const name = Object.keys(ratio).find(n => cssSafe(n) === m[1]);
   if(name) updateHandle(name);
+});
+/* ---------------- ESTIMATED 1RM (Epley, compound lifts, sets of 12 or fewer) ---------------- */
+const SHOW_E1RM = true;
+const E1RM_LIFTS = ["Smith Machine Flat Bench Press","Incline Smith Machine Press","Overhead Press (Smith Machine)","Smith Machine Squat","Smith Machine Hip Thrust","Romanian Deadlift (Smith)"];
+function isCompound(n){ return E1RM_LIFTS.includes(n); }
+function e1(w, r){ return (w > 0 && r > 0 && r <= 12) ? w * (1 + r / 30) : 0; }
+function bestE1(ws, rs){ let b = 0; (ws || []).forEach((w,i)=>{ b = Math.max(b, e1(w, (rs || [])[i])); }); return b; }
+function e1Html(name){
+  if(!SHOW_E1RM || !isCompound(name)) return "";
+  const e = entries[name];
+  if(!e || !e.lastWeights) return "";
+  const cur = bestE1(e.lastWeights, e.lastReps);
+  if(!cur) return "";
+  const best = Math.max(e.bestE1RM || 0, cur);
+  return `<div class="e1rm">Est. 1RM: ${Math.round(cur)} lb (last session)${best > cur + 0.5 ? " · best " + Math.round(best) + " lb" : ""}</div>`;
+}
+
+/* ---------------- PLATE LOADING ---------------- */
+const DEFAULT_PLATES = "55x2, 45x2, 35x2, 25x2, 15x2, 10x2, 5x2, 2.5x2";
+function parsePlates(txt){
+  const out = [];
+  String(txt || "").split(/[,;\n]+/).forEach(p=>{
+    const m = /^\s*(\d+(?:\.\d+)?)\s*(?:x|×|\*)?\s*(\d+)?\s*$/i.exec(p);
+    if(m){ const w = parseFloat(m[1]), n = m[2] ? parseInt(m[2]) : 2; if(w > 0 && n > 0) out.push({ w, n }); }
+  });
+  out.sort((a,b)=> b.w - a.w);
+  return out;
+}
+function plateInv(){ const p = parsePlates(settings.plates || DEFAULT_PLATES); return p.length ? p : parsePlates(DEFAULT_PLATES); }
+function bestCombos(inv){
+  const best = new Map();
+  function rec(i, sum, cnt, combo){
+    if(i === inv.length){
+      const key = Math.round(sum * 2), cur = best.get(key);
+      if(!cur || cnt <= cur.cnt) best.set(key, { cnt, combo: combo.slice() });
+      return;
+    }
+    for(let n = 0; n <= inv[i].max; n++){
+      if(n) combo.push({ w: inv[i].w, n });
+      rec(i + 1, sum + n * inv[i].w, cnt + n, combo);
+      if(n) combo.pop();
+    }
+  }
+  rec(0, 0, 0, []);
+  return best;
+}
+function fmtCombo(c){ return c.length ? c.map(x => x.n > 1 ? x.n + "×" + x.w : "" + x.w).join(" + ") : "no plates"; }
+// Fly-style moves that use BOTH sides of the rack at once. Each side loads its own plates, so you only have one of each size per side.
+const BOTH_SIDES = ["Seated Cable Pec Flye","Cable Crossovers","Low-to-High Cable Fly","Face-Away Bayesian Cable Curl","Reverse Cable Crossover (Rear Delt)"];
+function plateKind(name){ return /smith/i.test(name) ? "smith" : (isCableEx(name) ? "horn" : null); }
+function platesText(name, total){
+  const kind = plateKind(name);
+  if(!kind || !(total > 0)) return "";
+  const inv = plateInv(), bar = settings.smithBar || 40;
+  let target, invm, suffix;
+  if(kind === "smith"){
+    if(total < bar) return fmtLb(total) + " lb is under the " + fmtLb(bar) + " lb bar";
+    if(total === bar) return fmtLb(total) + " lb: bar only";
+    target = (total - bar) / 2;
+    invm = inv.map(p => ({ w: p.w, max: Math.floor(p.n / 2) })).filter(p => p.max > 0);
+    suffix = " per side";
+  } else {
+    const both = BOTH_SIDES.includes(name);
+    target = total;
+    invm = inv.map(p => ({ w: p.w, max: both ? Math.floor(p.n / 2) : p.n })).filter(p => p.max > 0);
+    suffix = both ? " each side" : "";
+  }
+  const best = bestCombos(invm), key = Math.round(target * 2), hit = best.get(key);
+  if(hit) return fmtLb(total) + " lb: " + fmtCombo(hit.combo) + suffix;
+  let lo = null, hi = null;
+  best.forEach((v,k)=>{ if(k < key && (lo === null || k > lo)) lo = k; if(k > key && (hi === null || k < hi)) hi = k; });
+  const totalOf = k => kind === "smith" ? bar + k : k / 2;
+  const desc = k => fmtLb(totalOf(k)) + " lb (" + fmtCombo(best.get(k).combo) + suffix + ")";
+  const opts = [lo, hi].filter(k => k !== null).map(desc);
+  return fmtLb(total) + " lb can't be made exactly" + (opts.length ? ". Closest: " + opts.join(" or ") : "");
+}
+function updatePlates(name){
+  const el = document.getElementById("pl-" + cssSafe(name));
+  if(!el) return;
+  const seen = [];
+  for(let i = 0; i < SETS_PER_EX; i++){
+    const inp = document.getElementById("w-" + cssSafe(name) + "-" + i);
+    const w = inp ? parseFloat(inp.value) : NaN;
+    if(w > 0 && !seen.includes(w)) seen.push(w);
+  }
+  el.textContent = seen.slice(0, 3).map(w => platesText(name, w)).filter(Boolean).join("  ·  ");
+}
+function refreshLines(){
+  document.querySelectorAll(".plate-line").forEach(el => updatePlates(el.getAttribute("data-ex")));
+  document.querySelectorAll(".handle-wt").forEach(el => { const n = Object.keys(ratio).find(k => "hw-" + cssSafe(k) === el.id); if(n) updateHandle(n); });
+}
+document.getElementById("main").addEventListener("input", (ev)=>{
+  const m = /^w-(.+)-\d+$/.exec(ev.target.id || "");
+  if(!m) return;
+  const el = document.getElementById("pl-" + m[1]);
+  if(el) updatePlates(el.getAttribute("data-ex"));
 });
 function cssSafe(s){ return s.replace(/[^a-zA-Z0-9]/g,"_"); }
 function esc(s){ return s.replace(/"/g,"&quot;"); }
@@ -719,13 +823,17 @@ document.getElementById("finishBtn").onclick = ()=>{
     const topWeight = Math.max(...weights);
     const e = entries[ex.name] || {};
     const prevBest = e.allTimeBest || 0;
-    const isPR = topWeight > prevBest;
+    const sessE1 = (SHOW_E1RM && isCompound(ex.name)) ? bestE1(weights, reps) : 0;
+    const prevE1 = e.bestE1RM || (SHOW_E1RM && isCompound(ex.name) ? bestE1(e.lastWeights, e.lastReps) : 0);
+    const e1PR = sessE1 > 0 && prevE1 > 0 && sessE1 > prevE1 + 0.5;
+    const isPR = topWeight > prevBest || e1PR;
     if(isPR) prCount++;
     entries[ex.name] = {
       lastWeight: topWeight,
       lastReps: reps,
       lastWeights: weights,
       allTimeBest: Math.max(prevBest, topWeight),
+      bestE1RM: Math.max(prevE1, sessE1) || undefined,
       history: [...(e.history||[]), { date: new Date().toISOString(), weight: topWeight, reps: reps }].slice(-50)
     };
     lines.push(`${ex.name}: ${topWeight} lb × ${reps.join("/")}${isPR ? " 🏆 PR" : ""}`);
@@ -783,15 +891,22 @@ function renderBwHistory(){
 document.getElementById("settingsBtn").onclick = ()=>{
   document.getElementById("restSecInput").value = settings.restSec;
   document.getElementById("awakeInput").checked = settings.keepAwake !== false;
+  document.getElementById("barInput").value = settings.smithBar || 40;
+  document.getElementById("platesInput").value = settings.plates || DEFAULT_PLATES;
   document.getElementById("settingsModalBg").classList.add("show");
 };
 document.getElementById("settingsClose").onclick = ()=>{
   const v = parseInt(document.getElementById("restSecInput").value);
   if(!isNaN(v) && v > 0) settings.restSec = v;
   settings.keepAwake = document.getElementById("awakeInput").checked;
+  const bv = parseFloat(document.getElementById("barInput").value);
+  if(bv >= 0) settings.smithBar = bv;
+  const pv = document.getElementById("platesInput").value;
+  if(parsePlates(pv).length) settings.plates = pv;
   if(settings.keepAwake) keepAwake(); else releaseAwake();
   save(K_SETTINGS, settings);
   document.getElementById("settingsModalBg").classList.remove("show");
+  refreshLines();
 };
 document.getElementById("exportBtn").onclick = ()=>{
   const backup = { entries, settings, bw, notes, rotation, ratio, exportedAt: new Date().toISOString() };
@@ -845,6 +960,8 @@ function showToast(msg){
 
 /* ---------------- INIT ---------------- */
 /* modals: keep the ✕ pinned (outside the scrolling area) and let a tap outside the sheet close it */
+{ const _ri = restoreInputs; restoreInputs = function(){ const r = _ri.apply(this, arguments); refreshLines(); return r; }; }
+{ const _rd = restoreDraft; restoreDraft = function(){ const r = _rd.apply(this, arguments); refreshLines(); return r; }; }
 document.querySelectorAll(".modal").forEach(m=>{
   const sc = document.createElement("div");
   sc.className = "modal-scroll";
